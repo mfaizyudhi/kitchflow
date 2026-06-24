@@ -39,6 +39,9 @@ dependencies:
   iconsax:
   flutter_svg:
   fl_chart:
+  supabase_flutter: ^2.9.1
+  google_sign_in: ^6.2.2
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

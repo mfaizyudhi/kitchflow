@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/stock_card.dart';
+import '../../../../routes/app_pages.dart';
+import 'package:get/get.dart';
+
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
@@ -300,7 +303,7 @@ class _InventoryViewState extends State<InventoryView> {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14),
-                            onTap: () {},
+                            onTap: () => Get.toNamed(Routes.TAMBAH_BAHAN),
                             child: const Padding(
                               padding: EdgeInsets.all(12),
                               child: Icon(

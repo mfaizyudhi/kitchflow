@@ -1,7 +1,6 @@
-// profil_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // 1. Import Supabase
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../routes/app_pages.dart';
@@ -14,10 +13,32 @@ class ProfilView extends StatefulWidget {
 }
 
 class _ProfilViewState extends State<ProfilView> {
+  final SupabaseClient _supabase = Supabase.instance.client; // 2. Instance Supabase
+  Future<Map<String, dynamic>?>? _profileFuture;
+
   bool _aiPrediksi     = true;
   bool _notifStok      = true;
   bool _modeDarkAi     = false;
   bool _autoRekomendasi = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfileData(); // 3. Ambil data saat halaman dibuka
+  }
+
+  void _fetchProfileData() {
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _profileFuture = _supabase
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .single(); // Mengambil satu baris data user aktif
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +47,6 @@ class _ProfilViewState extends State<ProfilView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-
           /// GLOW TOP
           Positioned(
             top: -80,
@@ -71,7 +91,6 @@ class _ProfilViewState extends State<ProfilView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   // ── HEADER ──────────────────────────────────────
                   RichText(
                     text: const TextSpan(
@@ -108,161 +127,33 @@ class _ProfilViewState extends State<ProfilView> {
 
                   const SizedBox(height: 24),
 
-                  // ── PROFILE CARD ────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF1A0533),
-                          Color(0xFF0D1F3C),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                          color: AppColors.primary.withOpacity(0.25)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.15),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
+                  // ── PROFILE CARD (MENGGUNAKAN FUTUREBUILDER) ──────
+                  FutureBuilder<Map<String, dynamic>?>(
+                    future: _profileFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
 
-                            /// AVATAR
-                            Container(
-                              width: 74,
-                              height: 74,
-                              decoration: BoxDecoration(
-                                gradient: AppColors.brandGradient,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary
-                                        .withOpacity(0.4),
-                                    blurRadius: 18,
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.storefront_rounded,
-                                color: Colors.white,
-                                size: 34,
-                              ),
-                            ),
+                      // Jika error atau data tidak ditemukan di tabel profiles
+                      if (snapshot.hasError || !snapshot.hasData) {
+                        return _buildProfileCard(
+                          namaWarteg: "Gagal memuat data",
+                          idUser: "Kosong",
+                        );
+                      }
 
-                            const SizedBox(width: 16),
-
-                            /// INFO
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "Warteg Bahari Digital",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    "ID: AI-WRT-0063",
-                                    style: TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      _badge("AKTIF", Colors.green),
-                                      const SizedBox(width: 8),
-                                      _badge("PREMIUM AI",
-                                          AppColors.secondary),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            /// EDIT BUTTON
-                            GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white10,
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  color: Colors.white54,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-                        const Divider(color: Colors.white10),
-                        const SizedBox(height: 14),
-
-                        /// JAM OPERASIONAL
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary
-                                    .withOpacity(0.12),
-                                borderRadius:
-                                    BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.access_time_rounded,
-                                color: AppColors.secondary,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Jam Operasional",
-                                  style: TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  "Senin – Minggu  •  06:00 – 22:00",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      final profileData = snapshot.data!;
+                      return _buildProfileCard(
+                        namaWarteg: profileData['nama_warteg'] ?? "Tanpa Nama",
+                        idUser: _supabase.auth.currentUser?.email ?? "-",
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 20),
@@ -336,8 +227,7 @@ class _ProfilViewState extends State<ProfilView> {
                     title: "Prediksi Stok Otomatis",
                     subtitle: "AI prediksi kebutuhan stok harian",
                     value: _aiPrediksi,
-                    onChanged: (val) =>
-                        setState(() => _aiPrediksi = val),
+                    onChanged: (val) => setState(() => _aiPrediksi = val),
                   ),
                   _toggleTile(
                     icon: Icons.notifications_active_rounded,
@@ -345,8 +235,7 @@ class _ProfilViewState extends State<ProfilView> {
                     title: "Notifikasi Stok",
                     subtitle: "Alert saat stok menipis",
                     value: _notifStok,
-                    onChanged: (val) =>
-                        setState(() => _notifStok = val),
+                    onChanged: (val) => setState(() => _notifStok = val),
                   ),
                   _toggleTile(
                     icon: Icons.restaurant_menu_rounded,
@@ -354,8 +243,7 @@ class _ProfilViewState extends State<ProfilView> {
                     title: "Auto Rekomendasi Menu",
                     subtitle: "Saran menu berdasarkan stok",
                     value: _autoRekomendasi,
-                    onChanged: (val) =>
-                        setState(() => _autoRekomendasi = val),
+                    onChanged: (val) => setState(() => _autoRekomendasi = val),
                   ),
                   _toggleTile(
                     icon: Icons.dark_mode_rounded,
@@ -363,8 +251,7 @@ class _ProfilViewState extends State<ProfilView> {
                     title: "Mode AI Analitik",
                     subtitle: "Analitik mendalam berbasis AI",
                     value: _modeDarkAi,
-                    onChanged: (val) =>
-                        setState(() => _modeDarkAi = val),
+                    onChanged: (val) => setState(() => _modeDarkAi = val),
                   ),
 
                   const SizedBox(height: 28),
@@ -379,10 +266,8 @@ class _ProfilViewState extends State<ProfilView> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: AppColors.secondary
-                                    .withOpacity(0.12),
-                                borderRadius:
-                                    BorderRadius.circular(12),
+                                color: AppColors.secondary.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
                                 Icons.auto_awesome,
@@ -393,8 +278,7 @@ class _ProfilViewState extends State<ProfilView> {
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "AI Optimization Active",
@@ -418,17 +302,12 @@ class _ProfilViewState extends State<ProfilView> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 18),
-
-                        _progressRow(
-                            "Prediksi Penjualan", 0.92, Colors.green),
+                        _progressRow("Prediksi Penjualan", 0.92, Colors.green),
                         const SizedBox(height: 14),
-                        _progressRow("Efisiensi Produksi", 0.84,
-                            AppColors.secondary),
+                        _progressRow("Efisiensi Produksi", 0.84, AppColors.secondary),
                         const SizedBox(height: 14),
-                        _progressRow("Minimasi Kerugian", 0.78,
-                            AppColors.primary),
+                        _progressRow("Minimasi Kerugian", 0.78, AppColors.primary),
                       ],
                     ),
                   ),
@@ -440,13 +319,11 @@ class _ProfilViewState extends State<ProfilView> {
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.04),
                             borderRadius: BorderRadius.circular(20),
-                            border:
-                                Border.all(color: Colors.white10),
+                            border: Border.all(color: Colors.white10),
                           ),
                           child: const Text(
                             "KitchFlow AI  •  v1.0.0",
@@ -469,15 +346,18 @@ class _ProfilViewState extends State<ProfilView> {
                     height: 58,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                          color: Colors.redAccent.withOpacity(0.3)),
+                      border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                       color: Colors.redAccent.withOpacity(0.06),
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
-                        onTap: () => Get.offAllNamed(Routes.LOGIN),
+                        onTap: () async {
+                          // Pastikan memanggil logout dari Supabase Auth juga
+                          await _supabase.auth.signOut();
+                          Get.offAllNamed(Routes.LOGIN);
+                        },
                         child: const Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -487,7 +367,7 @@ class _ProfilViewState extends State<ProfilView> {
                                 color: Colors.redAccent,
                                 size: 20,
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Text(
                                 "Logout Dari Sesi",
                                 style: TextStyle(
@@ -511,7 +391,145 @@ class _ProfilViewState extends State<ProfilView> {
     );
   }
 
-  // ── HELPERS ──────────────────────────────────────────────────────
+  // ── REFACTOR CARD PROFILE BIAR BISA MENERIMA DATA DINAMIS ──────────
+  Widget _buildProfileCard({required String namaWarteg, required String idUser}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A0533), Color(0xFF0D1F3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 74,
+                height: 74,
+                decoration: BoxDecoration(
+                  gradient: AppColors.brandGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 18,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.storefront_rounded,
+                  color: Colors.white,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      namaWarteg, // <-- SEKARANG SUDAH DINAMIS
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      idUser, // <-- MENAMPILKAN EMAIL/ID USER AKTIF
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _badge("AKTIF", Colors.green),
+                        const SizedBox(width: 8),
+                        _badge("PREMIUM AI", AppColors.secondary),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {},
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: Colors.white54,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white10),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.access_time_rounded,
+                  color: AppColors.secondary,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Jam Operasional",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    "Senin – Minggu  •  06:00 – 22:00",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── HELPERS LAINNYA ────────────────────────────────────────────────
 
   Widget _sectionTitle(String title) {
     return Text(
@@ -526,8 +544,7 @@ class _ProfilViewState extends State<ProfilView> {
 
   Widget _badge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
@@ -544,8 +561,7 @@ class _ProfilViewState extends State<ProfilView> {
     );
   }
 
-  Widget _statCard(
-      String label, String value, IconData icon, Color color) {
+  Widget _statCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -717,8 +733,7 @@ class _ProfilViewState extends State<ProfilView> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                  color: Colors.white70, fontSize: 13),
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
             Text(
               "${(value * 100).toInt()}%",

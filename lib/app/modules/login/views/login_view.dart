@@ -1,8 +1,7 @@
-// login_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../services/auth_service.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -13,6 +12,70 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  bool _isGoogleLoading = false;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar(
+        "Peringatan",
+        "Email dan password tidak boleh kosong",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.login(email: email, password: password);
+      Get.offAllNamed('/main');
+    } catch (e) {
+      Get.snackbar(
+        "Login Gagal",
+        e.toString().replaceAll("Exception: ", ""),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      await AuthService.signInWithGoogle();
+      Get.offAllNamed('/main');
+    } catch (e) {
+      Get.snackbar(
+        "Login Gagal",
+        e.toString().replaceAll("Exception: ", ""),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +237,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         const SizedBox(height: 8),
                         TextField(
+                          controller: _emailController,
                           style: const TextStyle(color: Colors.white),
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
@@ -212,6 +276,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         const SizedBox(height: 8),
                         TextField(
+                          controller: _passwordController,
                           obscureText: _obscurePassword,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
@@ -273,49 +338,66 @@ class _LoginViewState extends State<LoginView> {
                           width: double.infinity,
                           height: 56,
                           decoration: BoxDecoration(
-                            gradient: AppColors.brandGradient,
+                            gradient: _isLoading
+                                ? null
+                                : AppColors.brandGradient,
+                            color: _isLoading ? Colors.white12 : null,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.4),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                            boxShadow: _isLoading
+                                ? []
+                                : [
+                                    BoxShadow(
+                                      color:
+                                          AppColors.primary.withOpacity(0.4),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
                           ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
-                              onTap: () => Get.offAllNamed('/main'),
-                              child: const Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Masuk",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                              onTap: _isLoading ? null : _handleLogin,
+                              child: Center(
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            "Masuk",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Icon(Icons.arrow_forward_rounded,
+                                              color: Colors.white, size: 20),
+                                        ],
                                       ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward_rounded,
-                                        color: Colors.white, size: 20),
-                                  ],
-                                ),
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         /// DIVIDER
                         Row(
                           children: [
-                            Expanded(child: Divider(color: Colors.white12)),
+                            Expanded(
+                                child: Divider(color: Colors.white12)),
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
@@ -325,8 +407,56 @@ class _LoginViewState extends State<LoginView> {
                                     fontSize: 12),
                               ),
                             ),
-                            Expanded(child: Divider(color: Colors.white12)),
+                            Expanded(
+                                child: Divider(color: Colors.white12)),
                           ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        /// TOMBOL GOOGLE
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: OutlinedButton(
+                            onPressed: _isGoogleLoading
+                                ? null
+                                : _handleGoogleLogin,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.white24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: _isGoogleLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Image.network(
+                                        'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
+                                        width: 22,
+                                        height: 22,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      const Text(
+                                        "Login dengan Google",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
                         ),
 
                         const SizedBox(height: 24),
@@ -370,7 +500,8 @@ class _LoginViewState extends State<LoginView> {
                         const SizedBox(width: 6),
                         const Text(
                           "Data Anda aman & terenkripsi",
-                          style: TextStyle(color: Colors.white24, fontSize: 12),
+                          style:
+                              TextStyle(color: Colors.white24, fontSize: 12),
                         ),
                       ],
                     ),

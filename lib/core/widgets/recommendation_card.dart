@@ -9,6 +9,7 @@ class RecommendationCard extends StatelessWidget {
   final String profit;
   final String hpp;
   final String level;
+  final VoidCallback? onGunakanMenu;
 
   const RecommendationCard({
     super.key,
@@ -17,6 +18,7 @@ class RecommendationCard extends StatelessWidget {
     required this.profit,
     required this.hpp,
     required this.level,
+    this.onGunakanMenu,
   });
 
   @override
@@ -205,7 +207,7 @@ class RecommendationCard extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: () => Get.toNamed(Routes.HPP),
+                      onTap: onGunakanMenu ?? () => Get.toNamed(Routes.HPP),
                       child: const Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,

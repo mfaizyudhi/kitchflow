@@ -338,104 +338,12 @@ class DashboardView extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // ── AI RECOMMENDATION ────────────────────────────
-                  GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        /// LABEL
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome,
-                                color: AppColors.secondary,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              "AI Recommendation",
-                              style: TextStyle(
-                                color: AppColors.secondary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        const Text(
-                          "Berdasarkan data cuaca besok yang diprediksi hujan, tambahkan porsi Sayur Sop dan Tempe Mendoan sebesar 15%.",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        /// TOMBOL PREDIKSI
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: AppColors.brandGradient,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: () {},
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 9),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.bolt_rounded,
-                                        color: Colors.white, size: 14),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      "Prediksi Laris",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── MENU TERLARIS ────────────────────────────────
+                  // ── List Menu ────────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Menu Terlaris",
+                        "List Menu",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -444,8 +352,8 @@ class DashboardView extends StatelessWidget {
                       ),
                       GestureDetector(
                         onTap: () {
-  Get.toNamed(Routes.BEST_MENU);
-},
+                          Get.toNamed(Routes.BEST_MENU);
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),

@@ -20,4 +20,5 @@ abstract class Routes {
   static const INVENTORY = '/inventory';
   static const AI_SCAN = '/ai_scan';
   static const BEST_MENU = '/best-menu';
+  static const TAMBAH_BAHAN = '/tambah-bahan';
 }

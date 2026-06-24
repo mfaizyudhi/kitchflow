@@ -21,6 +21,8 @@ import '../app/modules/sales/bindings/sales_binding.dart';
 import '../app/modules/sales/views/sales_view.dart';
 import '../app/modules/splash/bindings/splash_binding.dart';
 import '../app/modules/splash/views/splash_view.dart';
+import '../app/modules/tambah_bahan/bindings/tambah_bahan_binding.dart';
+import '../app/modules/tambah_bahan/views/tambah_bahan_view.dart';
 import '../core/widgets/main_wrapper.dart';
 
 // Import dari lib/app/modules/ (hasil GetCLI)
@@ -92,6 +94,11 @@ class AppPages {
       name: Routes.BEST_MENU,
       page: () => const BestMenuView(),
       binding: BestMenuBinding(),
+    ),
+    GetPage(
+      name: Routes.TAMBAH_BAHAN,
+      page: () => const TambahBahanView(),
+      binding: TambahBahanBinding(),
     ),
   ];
 }
