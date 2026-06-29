@@ -9,30 +9,63 @@ class AuthService {
     serverClientId: '821783986557-63lttsjks2kbniqob978q2thtlqbi4qm.apps.googleusercontent.com',
   );
 
-  /// REGISTER USER + simpan data profil ke tabel profiles
-  static Future<void> register({
+  /// VERIFY OTP setelah register
+  static Future<void> verifyOtp({
     required String email,
-    required String password,
-    required String namaWarteg,
-    required String namaPemilik,
-    required String lokasi,
+    required String otp,
   }) async {
     try {
-      // 1. Daftarkan user ke Supabase Auth (password otomatis di-hash)
+      final AuthResponse response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.signup,
+      );
+
+      final user = response.user;
+      if (user == null) throw Exception("Verifikasi gagal");
+    } on AuthException catch (e) {
+      throw Exception("OTP tidak valid: ${e.message}");
+    } catch (e) {
+      throw Exception("Terjadi kesalahan: $e");
+    }
+  }
+
+  /// RESEND OTP jika tidak diterima
+  static Future<void> resendOtp({required String email}) async {
+    try {
+      await _supabase.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+    } on AuthException catch (e) {
+      throw Exception("Gagal kirim ulang OTP: ${e.message}");
+    } catch (e) {
+      throw Exception("Terjadi kesalahan: $e");
+    }
+  }
+
+  /// REGISTER USER — kirim OTP 6 digit, bukan link
+  static Future<void> register({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      // ✅ PERBAIKAN: pakai shouldCreateUser + emailRedirectTo null
+      // agar Supabase kirim kode OTP bukan link konfirmasi
       final AuthResponse response = await _supabase.auth.signUp(
         email: email.trim(),
         password: password,
+        emailRedirectTo: null, // ✅ ini yang memaksa kirim OTP bukan link
       );
 
       final user = response.user;
       if (user == null) throw Exception("Gagal membuat akun");
 
-      // 2. Simpan data tambahan ke tabel profiles
+      // Simpan username ke tabel profiles
       await _supabase.from('profiles').insert({
         'id': user.id,
-        'nama_warteg': namaWarteg.trim(),
-        'nama_pemilik': namaPemilik.trim(),
-        'lokasi': lokasi.trim(),
+        'nama_pemilik': username.trim(),
       });
     } on AuthException catch (e) {
       throw Exception("Register gagal: ${e.message}");

@@ -20,10 +20,27 @@ class AppColors {
   static const textHint      = Color(0xFF4B5563);
 
   // Status
-  static const success = Color(0xFF10B981); // hijau
-  static const warning = Color(0xFFF59E0B); // kuning
-  static const danger  = Color(0xFFEF4444); // merah
-  static const info    = Color(0xFF3B82F6); // biru
+  static const success = Color(0xFF10B981);
+  static const warning = Color(0xFFF59E0B);
+  static const danger  = Color(0xFFEF4444);
+  static const info    = Color(0xFF3B82F6);
+
+  // ==========================
+  // TAMBAHAN DARI KODE KEDUA
+  // ==========================
+
+  static const cardBorder = Color(0xFF252540);
+
+  static const textMuted = Color(0xFF555566);
+
+  static const heroGradient = LinearGradient(
+    colors: [
+      Color(0xFF1A0533),
+      Color(0xFF0D1F3C),
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // Gradient helper
   static const LinearGradient brandGradient = LinearGradient(

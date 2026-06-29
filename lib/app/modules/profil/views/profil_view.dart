@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // 1. Import Supabase
+import 'package:supabase_flutter/supabase_flutter.dart'; 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/glass_card.dart';
 import '../../../../routes/app_pages.dart';
 
 class ProfilView extends StatefulWidget {
@@ -13,18 +12,13 @@ class ProfilView extends StatefulWidget {
 }
 
 class _ProfilViewState extends State<ProfilView> {
-  final SupabaseClient _supabase = Supabase.instance.client; // 2. Instance Supabase
+  final SupabaseClient _supabase = Supabase.instance.client; 
   Future<Map<String, dynamic>?>? _profileFuture;
-
-  bool _aiPrediksi     = true;
-  bool _notifStok      = true;
-  bool _modeDarkAi     = false;
-  bool _autoRekomendasi = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfileData(); // 3. Ambil data saat halaman dibuka
+    _fetchProfileData(); 
   }
 
   void _fetchProfileData() {
@@ -35,7 +29,7 @@ class _ProfilViewState extends State<ProfilView> {
             .from('profiles')
             .select()
             .eq('id', user.id)
-            .single(); // Mengambil satu baris data user aktif
+            .single(); 
       });
     }
   }
@@ -127,7 +121,7 @@ class _ProfilViewState extends State<ProfilView> {
 
                   const SizedBox(height: 24),
 
-                  // ── PROFILE CARD (MENGGUNAKAN FUTUREBUILDER) ──────
+                  // ── PROFILE CARD (FUTUREBUILDER) ──────────────────
                   FutureBuilder<Map<String, dynamic>?>(
                     future: _profileFuture,
                     builder: (context, snapshot) {
@@ -140,18 +134,30 @@ class _ProfilViewState extends State<ProfilView> {
                         );
                       }
 
-                      // Jika error atau data tidak ditemukan di tabel profiles
-                      if (snapshot.hasError || !snapshot.hasData) {
-                        return _buildProfileCard(
-                          namaWarteg: "Gagal memuat data",
-                          idUser: "Kosong",
-                        );
+                      final currentUser = _supabase.auth.currentUser;
+                      String displayName = "Pengguna KitchFlow"; 
+                      String emailUser = currentUser?.email ?? "-";
+
+                      if (snapshot.hasData && snapshot.data != null) {
+                        final profileData = snapshot.data!;
+                        
+                        // Membaca 'nama_pemilik' dari tabel profiles
+                        if (profileData['nama_pemilik'] != null && profileData['nama_pemilik'].toString().isNotEmpty) {
+                          displayName = profileData['nama_pemilik'];
+                        } 
+                        // Fallback ke Nama Google Auth jika nama_pemilik kosong
+                        else if (currentUser?.userMetadata?['full_name'] != null) {
+                          displayName = currentUser!.userMetadata!['full_name'];
+                        }
+                      } else {
+                        if (currentUser?.userMetadata?['full_name'] != null) {
+                          displayName = currentUser!.userMetadata!['full_name'];
+                        }
                       }
 
-                      final profileData = snapshot.data!;
                       return _buildProfileCard(
-                        namaWarteg: profileData['nama_warteg'] ?? "Tanpa Nama",
-                        idUser: _supabase.auth.currentUser?.email ?? "-",
+                        namaUser: displayName, 
+                        emailUser: emailUser,       
                       );
                     },
                   ),
@@ -178,15 +184,6 @@ class _ProfilViewState extends State<ProfilView> {
                           AppColors.secondary,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _statCard(
-                          "Efisiensi\nAI",
-                          "84%",
-                          Icons.auto_awesome_rounded,
-                          AppColors.primary,
-                        ),
-                      ),
                     ],
                   ),
 
@@ -197,16 +194,10 @@ class _ProfilViewState extends State<ProfilView> {
                   const SizedBox(height: 14),
 
                   _menuTile(
-                    icon: Icons.store_rounded,
+                    icon: Icons.person_outline_rounded,
                     color: AppColors.primary,
-                    title: "Informasi Bisnis",
-                    subtitle: "Nama usaha, alamat, kontak",
-                  ),
-                  _menuTile(
-                    icon: Icons.location_on_rounded,
-                    color: Colors.orange,
-                    title: "Konfigurasi Lokasi",
-                    subtitle: "Atur lokasi warteg Anda",
+                    title: "Informasi Pengguna",
+                    subtitle: "Nama lengkap, data diri, kontak",
                   ),
                   _menuTile(
                     icon: Icons.security_rounded,
@@ -215,104 +206,7 @@ class _ProfilViewState extends State<ProfilView> {
                     subtitle: "Password dan autentikasi",
                   ),
 
-                  const SizedBox(height: 28),
-
-                  // ── FITUR AI ─────────────────────────────────────
-                  _sectionTitle("Fitur & AI"),
-                  const SizedBox(height: 14),
-
-                  _toggleTile(
-                    icon: Icons.auto_awesome_rounded,
-                    color: AppColors.secondary,
-                    title: "Prediksi Stok Otomatis",
-                    subtitle: "AI prediksi kebutuhan stok harian",
-                    value: _aiPrediksi,
-                    onChanged: (val) => setState(() => _aiPrediksi = val),
-                  ),
-                  _toggleTile(
-                    icon: Icons.notifications_active_rounded,
-                    color: Colors.orange,
-                    title: "Notifikasi Stok",
-                    subtitle: "Alert saat stok menipis",
-                    value: _notifStok,
-                    onChanged: (val) => setState(() => _notifStok = val),
-                  ),
-                  _toggleTile(
-                    icon: Icons.restaurant_menu_rounded,
-                    color: Colors.green,
-                    title: "Auto Rekomendasi Menu",
-                    subtitle: "Saran menu berdasarkan stok",
-                    value: _autoRekomendasi,
-                    onChanged: (val) => setState(() => _autoRekomendasi = val),
-                  ),
-                  _toggleTile(
-                    icon: Icons.dark_mode_rounded,
-                    color: AppColors.primary,
-                    title: "Mode AI Analitik",
-                    subtitle: "Analitik mendalam berbasis AI",
-                    value: _modeDarkAi,
-                    onChanged: (val) => setState(() => _modeDarkAi = val),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ── AI STATUS ────────────────────────────────────
-                  GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome,
-                                color: AppColors.secondary,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "AI Optimization Active",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  SizedBox(height: 3),
-                                  Text(
-                                    "Sistem AI sedang mengoptimalkan stok & profit bisnis Anda.",
-                                    style: TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 12,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        _progressRow("Prediksi Penjualan", 0.92, Colors.green),
-                        const SizedBox(height: 14),
-                        _progressRow("Efisiensi Produksi", 0.84, AppColors.secondary),
-                        const SizedBox(height: 14),
-                        _progressRow("Minimasi Kerugian", 0.78, AppColors.primary),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 40),
 
                   // ── VERSI APP ────────────────────────────────────
                   Center(
@@ -326,14 +220,13 @@ class _ProfilViewState extends State<ProfilView> {
                             border: Border.all(color: Colors.white10),
                           ),
                           child: const Text(
-                            "KitchFlow AI  •  v1.0.0",
+                            "KitchFlow  •  v1.0.0",
                             style: TextStyle(
                               color: Colors.white24,
                               fontSize: 12,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
@@ -354,7 +247,6 @@ class _ProfilViewState extends State<ProfilView> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
                         onTap: () async {
-                          // Pastikan memanggil logout dari Supabase Auth juga
                           await _supabase.auth.signOut();
                           Get.offAllNamed(Routes.LOGIN);
                         },
@@ -367,7 +259,7 @@ class _ProfilViewState extends State<ProfilView> {
                                 color: Colors.redAccent,
                                 size: 20,
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               Text(
                                 "Logout Dari Sesi",
                                 style: TextStyle(
@@ -391,8 +283,8 @@ class _ProfilViewState extends State<ProfilView> {
     );
   }
 
-  // ── REFACTOR CARD PROFILE BIAR BISA MENERIMA DATA DINAMIS ──────────
-  Widget _buildProfileCard({required String namaWarteg, required String idUser}) {
+  // ── CARD PROFILE WIDGET ──────────────────────────────────────────
+  Widget _buildProfileCard({required String namaUser, required String emailUser}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -411,125 +303,80 @@ class _ProfilViewState extends State<ProfilView> {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 74,
-                height: 74,
-                decoration: BoxDecoration(
-                  gradient: AppColors.brandGradient,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
-                      blurRadius: 18,
-                    ),
-                  ],
+          Container(
+            width: 74,
+            height: 74,
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.4),
+                  blurRadius: 18,
                 ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  color: Colors.white,
-                  size: 34,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      namaWarteg, // <-- SEKARANG SUDAH DINAMIS
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      idUser, // <-- MENAMPILKAN EMAIL/ID USER AKTIF
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _badge("AKTIF", Colors.green),
-                        const SizedBox(width: 8),
-                        _badge("PREMIUM AI", AppColors.secondary),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.edit_rounded,
-                    color: Colors.white54,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
+            child: const Icon(
+              Icons.person_rounded, // Diubah ke ikon orang biasa karena bukan toko/warteg lagi
+              color: Colors.white,
+              size: 34,
+            ),
           ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white10),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.access_time_rounded,
-                  color: AppColors.secondary,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Jam Operasional",
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 11,
-                    ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  namaUser, 
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    "Senin – Minggu  •  06:00 – 22:00",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  emailUser, 
+                  style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 12,
                   ),
-                ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _badge("AKTIF", Colors.green),
+                    const SizedBox(width: 8),
+                    _badge("PREMIUM", AppColors.secondary),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
+              child: const Icon(
+                Icons.edit_rounded,
+                color: Colors.white54,
+                size: 16,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ── HELPERS LAINNYA ────────────────────────────────────────────────
+  // ── HELPERS ──────────────────────────────────────────────────────
 
   Widget _sectionTitle(String title) {
     return Text(
@@ -658,104 +505,6 @@ class _ProfilViewState extends State<ProfilView> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _toggleTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: color,
-            activeTrackColor: color.withOpacity(0.3),
-            inactiveThumbColor: Colors.white38,
-            inactiveTrackColor: Colors.white10,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _progressRow(String label, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            Text(
-              "${(value * 100).toInt()}%",
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: value,
-            minHeight: 6,
-            backgroundColor: Colors.white10,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-          ),
-        ),
-      ],
     );
   }
 }

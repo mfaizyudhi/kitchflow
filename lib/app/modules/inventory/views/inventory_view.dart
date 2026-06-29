@@ -1,9 +1,11 @@
+// inventory_view.dart
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/stock_card.dart';
 import '../../../../routes/app_pages.dart';
-import 'package:get/get.dart';
-
+import '../../inventory/controllers/inventory_controller.dart';
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
@@ -23,96 +25,15 @@ class _InventoryViewState extends State<InventoryView> {
     {"label": "Lainnya", "icon": Icons.more_horiz_rounded},
   ];
 
-  final List<Map<String, dynamic>> _stokList = [
-    {
-      "title": "Ayam Broiler",
-      "stock": "2.5 Kg",
-      "price": "Rp 45.000 / Kg",
-      "status": "Menipis",
-      "image": "assets/images/ayam.jpg",
-      "category": "Protein",
-    },
-    {
-      "title": "Telur Ayam",
-      "stock": "8 Kg",
-      "price": "Rp 30.000 / Kg",
-      "status": "Menipis",
-      "image": "assets/images/telur.jpg",
-      "category": "Protein",
-    },
-    {
-      "title": "Tempe",
-      "stock": "24 Kg",
-      "price": "Rp 18.000 / Kg",
-      "status": "Aman",
-      "image": "assets/images/tempe.jpg",
-      "category": "Protein",
-    },
-    {
-      "title": "Cabe Merah",
-      "stock": "12 Kg",
-      "price": "Rp 45.000 / Kg",
-      "status": "Aman",
-      "image": "assets/images/cabemerah.jpg",
-      "category": "Sayuran",
-    },
-    {
-      "title": "Bawang Merah",
-      "stock": "5 Kg",
-      "price": "Rp 38.000 / Kg",
-      "status": "Menipis",
-      "image": "assets/images/bawangmerah.jpg",
-      "category": "Sayuran",
-    },
-    {
-      "title": "Wortel",
-      "stock": "10 Kg",
-      "price": "Rp 12.000 / Kg",
-      "status": "Aman",
-      "image": "assets/images/wortel.jpg",
-      "category": "Sayuran",
-    },
-    {
-      "title": "Minyak Goreng",
-      "stock": "5 Liter",
-      "price": "Rp 20.000 / Liter",
-      "status": "Aman",
-      "image": "assets/images/minyak.jpg",
-      "category": "Bumbu",
-    },
-    {
-      "title": "Garam",
-      "stock": "0 Kg",
-      "price": "Rp 5.000 / Kg",
-      "status": "Habis",
-      "image": "assets/images/garam.jpg",
-      "category": "Bumbu",
-    },
-    {
-      "title": "Beras",
-      "stock": "50 Kg",
-      "price": "Rp 13.000 / Kg",
-      "status": "Aman",
-      "image": "assets/images/beras.jpg",
-      "category": "Lainnya",
-    },
-  ];
-
-  List<Map<String, dynamic>> get _filtered {
-    if (_selectedCategory == 0) return _stokList;
+  List<dynamic> _getFiltered(InventoryController inv) {
+    if (_selectedCategory == 0) return inv.items;
     final cat = _categories[_selectedCategory]["label"];
-    return _stokList.where((e) => e["category"] == cat).toList();
+    return inv.items.where((e) => e.category == cat).toList();
   }
 
-  int get _totalItem => _stokList.length;
-  int get _menipis =>
-      _stokList.where((e) => e["status"] == "Menipis").length;
-  int get _habis =>
-      _stokList.where((e) => e["status"] == "Habis").length;
-
-  void _showEditDialog(Map<String, dynamic> item) {
-    final controller =
-        TextEditingController(text: item["stock"].toString());
+  void _showEditDialog(dynamic item) {
+    final inv = InventoryController.to;
+    final controller = TextEditingController(text: item.stockQty.toString());
 
     showModalBottomSheet(
       context: context,
@@ -147,7 +68,7 @@ class _InventoryViewState extends State<InventoryView> {
             const SizedBox(height: 20),
 
             Text(
-              "Edit Stok — ${item["title"]}",
+              "Edit Stok — ${item.name}",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -163,8 +84,7 @@ class _InventoryViewState extends State<InventoryView> {
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
                 hintText: "Masukkan jumlah stok baru",
-                hintStyle:
-                    const TextStyle(color: AppColors.textHint),
+                hintStyle: const TextStyle(color: AppColors.textHint),
                 filled: true,
                 fillColor: const Color(0xFF0F172A),
                 border: OutlineInputBorder(
@@ -200,10 +120,10 @@ class _InventoryViewState extends State<InventoryView> {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    setState(() {
-                      item["stock"] = controller.text;
-                    });
+                  onTap: () async {
+                    final val = double.tryParse(controller.text);
+                    if (val == null) return;
+                    await inv.updateStok(item.id, val); // ← ganti dari setState
                     Navigator.pop(context);
                   },
                   child: const Center(
@@ -227,6 +147,8 @@ class _InventoryViewState extends State<InventoryView> {
 
   @override
   Widget build(BuildContext context) {
+    final inv = InventoryController.to;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -263,9 +185,9 @@ class _InventoryViewState extends State<InventoryView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             "Inventory",
                             style: TextStyle(
@@ -322,14 +244,14 @@ class _InventoryViewState extends State<InventoryView> {
                 const SizedBox(height: 16),
 
                 // ── SUMMARY ────────────────────────────────────
-                Padding(
+                Obx(() => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
                       Expanded(
                         child: _summaryCard(
                           "Total Item",
-                          "$_totalItem",
+                          "${inv.items.length}",
                           Icons.inventory_2_outlined,
                           AppColors.secondary,
                         ),
@@ -338,7 +260,7 @@ class _InventoryViewState extends State<InventoryView> {
                       Expanded(
                         child: _summaryCard(
                           "Menipis",
-                          "$_menipis",
+                          "${inv.itemMenipis}",
                           Icons.warning_amber_rounded,
                           Colors.orange,
                         ),
@@ -347,14 +269,14 @@ class _InventoryViewState extends State<InventoryView> {
                       Expanded(
                         child: _summaryCard(
                           "Habis",
-                          "$_habis",
+                          "${inv.itemHabis}",
                           Icons.remove_circle_outline,
                           Colors.red,
                         ),
                       ),
                     ],
                   ),
-                ),
+                )),
 
                 const SizedBox(height: 16),
 
@@ -468,22 +390,46 @@ class _InventoryViewState extends State<InventoryView> {
 
                 // ── LIST STOK ──────────────────────────────────
                 Expanded(
-                  child: ListView.builder(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _filtered.length,
-                    itemBuilder: (context, i) {
-                      final item = _filtered[i];
-                      return StockCard(
-                        title: item["title"],
-                        stock: item["stock"],
-                        price: item["price"],
-                        status: item["status"],
-                        image: item["image"],
-                        onEdit: () => _showEditDialog(item),
+                  child: Obx(() {
+                    final filtered = _getFiltered(inv);
+
+                    if (inv.isLoading.value) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
                       );
-                    },
-                  ),
+                    }
+
+                    if (filtered.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Tidak ada item',
+                          style: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, i) {
+                        final item = filtered[i];
+                        // Di ListView.builder, ganti:
+return StockCard(
+  title:  item.name,
+  stock:  item.stockQty.toString(),   // ← stockQty bukan stock
+  price:  item.priceLabel,            // ← priceLabel bukan price
+  status: item.status,
+  image:  item.imagePath,             // ← imagePath bukan image
+  onEdit: () => _showEditDialog(item),
+);
+                      },
+                    );
+                  }),
                 ),
               ],
             ),
