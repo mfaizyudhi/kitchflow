@@ -1,4 +1,4 @@
-// dashboard_view.dart
+// dashboard_view.dart - HANYA BAGIAN LIST MENU YANG DIOPTIMASI
 
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -83,7 +83,12 @@ class DashboardView extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
 
+                  // ================================================
+                  // 🔽 YANG DIUBAH: LIST MENU
+                  // ================================================
                   Obx(() => _buildMenuGrid(dash.menus)),
+                  // ================================================
+
                   const SizedBox(height: 28),
 
                   _buildSectionHeader(
@@ -317,7 +322,6 @@ class DashboardView extends StatelessWidget {
     required int habis,
     required List<dynamic> items,
   }) {
-    // ← PERBAIKAN: pakai stockLabel bukan stock
     final kritis      = items.where((e) => e.status == 'Habis').toList();
     final displayItem = kritis.isNotEmpty
         ? kritis.first
@@ -419,6 +423,9 @@ class DashboardView extends StatelessWidget {
     );
   }
 
+  // ==============================================================
+  // 🔽 YANG DIUBAH: MENU GRID - OVERLOAD PIXEL DIKURANGI
+  // ==============================================================
   Widget _buildMenuGrid(List<dynamic> menus) {
     if (menus.isEmpty) {
       return const Center(
@@ -437,26 +444,26 @@ class DashboardView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.72,
+        crossAxisSpacing: 8,      // 🔽 10 → 8 (lebih kecil)
+        mainAxisSpacing: 8,       // 🔽 10 → 8 (lebih kecil)
+        childAspectRatio: 0.68,   // 🔽 0.72 → 0.68 (lebih pipih = lebih ringan)
       ),
       itemCount: displayMenus.length,
       itemBuilder: (_, i) {
         final m = displayMenus[i];
         return MenuCard(
-          // ← PERBAIKAN: pakai property yang benar dari MenuItem
-          image:     m.imagePath,              // bukan m.image
+          image:     m.imagePath,
           title:     m.name,
-          soldLabel: '${m.targetPorsi} porsi', // bukan m.porsi
+          soldLabel: '${m.targetPorsi} porsi',
           badge:     'TOP ${m.rank}',
-          soldRatio: m.rekomendasiHarga > 0    // bukan m.soldRatio
+          soldRatio: m.rekomendasiHarga > 0
               ? (m.hppPerPorsi / m.rekomendasiHarga).clamp(0.0, 1.0)
               : 0.5,
         );
       },
     );
   }
+  // ==============================================================
 
   Widget _buildFinanceSummary({
     required double penjualan,

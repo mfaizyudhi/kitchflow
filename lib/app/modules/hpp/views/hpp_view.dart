@@ -41,9 +41,14 @@ class _HppViewState extends State<HppView> {
 
     final bahanIds = _bahanIds(menuCtrl);
     if (bahanIds.isEmpty) {
-      Get.snackbar("Bahan Kosong",
-          "Menu belum memiliki bahan. Tambahkan bahan terlebih dahulu.",
-          backgroundColor: AppColors.card, colorText: Colors.white);
+      Get.snackbar(
+        "Bahan Kosong",
+        "Menu belum memiliki bahan. Tambahkan bahan terlebih dahulu.",
+        backgroundColor: AppColors.card,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 3),
+      );
       return;
     }
 
@@ -57,6 +62,7 @@ class _HppViewState extends State<HppView> {
     final Map<String, double> hasil = {};
     for (final item in items) {
       await Future.delayed(const Duration(milliseconds: 400));
+      // Simulasi harga lokal (85% dari harga nasional)
       hasil[item.id] = item.pricePerUnit * 0.85;
       setState(() => _itemLoaded[item.id] = true);
     }
@@ -65,18 +71,55 @@ class _HppViewState extends State<HppView> {
     await hppCtrl.hitungHPP(hargaWilayah: hasil);
 
     setState(() => _hargaLoaded = true);
+
+    Get.snackbar(
+      "Berhasil",
+      "Harga lokal berhasil dimuat untuk ${items.length} bahan",
+      backgroundColor: Colors.green.withOpacity(0.8),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+    );
   }
 
   Future<void> _hitungHargaPasar() async {
     final hppCtrl = HppController.to;
-    // Simpan semua harga pasar dari controller input
+    final menuCtrl = BestMenuController.to;
+    final invCtrl = InventoryController.to;
+
+    final bahanIds = _bahanIds(menuCtrl);
+    final items = invCtrl.items.where((i) => bahanIds.contains(i.id)).toList();
+
+    // Validasi input
+    bool hasError = false;
     for (final entry in _hargaPasarControllers.entries) {
       final val = double.tryParse(entry.value.text);
-      if (val != null && val > 0) {
-        hppCtrl.setHargaPasar(entry.key, val);
+      if (val == null || val <= 0) {
+        hasError = true;
+        break;
       }
+      hppCtrl.setHargaPasar(entry.key, val);
     }
+
+    if (hasError) {
+      Get.snackbar(
+        "Input Tidak Valid",
+        "Pastikan semua harga pasar diisi dengan angka positif",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+
     await hppCtrl.hitungHPPPasar();
+
+    Get.snackbar(
+      "Berhasil",
+      "HPP dengan harga pasar berhasil dihitung",
+      backgroundColor: Colors.orange.withOpacity(0.8),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+    );
   }
 
   @override
@@ -90,6 +133,7 @@ class _HppViewState extends State<HppView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // Dekorasi latar belakang
           Positioned(
             top: -80,
             right: -60,
@@ -98,10 +142,29 @@ class _HppViewState extends State<HppView> {
               height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  AppColors.primary.withOpacity(0.2),
-                  Colors.transparent,
-                ]),
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withOpacity(0.2),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -100,
+            left: -80,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.secondary.withOpacity(0.1),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -123,8 +186,11 @@ class _HppViewState extends State<HppView> {
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: Colors.white10),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white, size: 18),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -157,7 +223,9 @@ class _HppViewState extends State<HppView> {
                             const Text(
                               "Harga berbasis lokasi & harga pasar",
                               style: TextStyle(
-                                  color: AppColors.textSecondary, fontSize: 12),
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -182,7 +250,8 @@ class _HppViewState extends State<HppView> {
                         ),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: AppColors.secondary.withOpacity(0.3)),
+                          color: AppColors.secondary.withOpacity(0.3),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.secondary.withOpacity(0.1),
@@ -201,22 +270,28 @@ class _HppViewState extends State<HppView> {
                                   color: AppColors.secondary.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(Icons.location_on_rounded,
-                                    color: AppColors.secondary, size: 18),
+                                child: const Icon(
+                                  Icons.location_on_rounded,
+                                  color: AppColors.secondary,
+                                  size: 18,
+                                ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text("Lokasi Warteg",
-                                        style: TextStyle(
-                                            color: Colors.white54,
-                                            fontSize: 11)),
+                                    const Text(
+                                      "Lokasi Warung",
+                                      style: TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                     Text(
-                                      isLoading
-                                          ? "Mendeteksi..."
-                                          : wilayah,
+                                      isLoading ? "Mendeteksi..." : wilayah,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -226,6 +301,7 @@ class _HppViewState extends State<HppView> {
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               GestureDetector(
                                 onTap: hppCtrl.detectLokasi,
                                 child: Container(
@@ -234,8 +310,8 @@ class _HppViewState extends State<HppView> {
                                     color: AppColors.secondary.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                        color: AppColors.secondary
-                                            .withOpacity(0.3)),
+                                      color: AppColors.secondary.withOpacity(0.3),
+                                    ),
                                   ),
                                   child: isLoading
                                       ? const SizedBox(
@@ -246,8 +322,11 @@ class _HppViewState extends State<HppView> {
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : const Icon(Icons.my_location_rounded,
-                                          color: AppColors.secondary, size: 16),
+                                      : const Icon(
+                                          Icons.my_location_rounded,
+                                          color: AppColors.secondary,
+                                          size: 16,
+                                        ),
                                 ),
                               ),
                             ],
@@ -256,28 +335,40 @@ class _HppViewState extends State<HppView> {
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                const Icon(Icons.gps_fixed_rounded,
-                                    color: Colors.green, size: 12),
+                                const Icon(
+                                  Icons.gps_fixed_rounded,
+                                  color: Colors.green,
+                                  size: 12,
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
-                                  child: Text(koordinat,
-                                      style: const TextStyle(
-                                          color: Colors.white38, fontSize: 11),
-                                      overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    koordinat,
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
+                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.green.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Text("GPS Aktif",
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      )),
+                                  child: const Text(
+                                    "GPS Aktif",
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -288,7 +379,8 @@ class _HppViewState extends State<HppView> {
                             onTap: _hargaLoaded ? null : _loadHargaWilayah,
                             child: Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 10),
                               decoration: BoxDecoration(
                                 gradient: _hargaLoaded
                                     ? null
@@ -299,27 +391,31 @@ class _HppViewState extends State<HppView> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: _hargaLoaded
                                     ? Border.all(
-                                        color: Colors.green.withOpacity(0.3))
+                                        color: Colors.green.withOpacity(0.3),
+                                      )
                                     : null,
                               ),
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      _hargaLoaded
-                                          ? Icons.check_circle_rounded
-                                          : Icons.public_rounded,
-                                      color: _hargaLoaded
-                                          ? Colors.green
-                                          : Colors.white,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _hargaLoaded
+                                        ? Icons.check_circle_rounded
+                                        : Icons.public_rounded,
+                                    color: _hargaLoaded
+                                        ? Colors.green
+                                        : Colors.white,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
                                       _hargaLoaded
                                           ? "Harga Lokal ${wilayah.split(',').first} Dimuat"
-                                          : "Ambil Harga Bahan dari Wilayah",
+                                          : "Ambil Harga Bahan dari Lokasi",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _hargaLoaded
                                             ? Colors.green
@@ -328,8 +424,8 @@ class _HppViewState extends State<HppView> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -342,7 +438,27 @@ class _HppViewState extends State<HppView> {
                   // ── MENU AKTIF ────────────────────────────────────
                   Obx(() {
                     final m = menuCtrl.activeMenu.value;
-                    if (m == null) return const SizedBox.shrink();
+                    if (m == null) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.3),
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Tidak ada menu aktif. Pilih menu terlebih dahulu.",
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
 
                     return Container(
                       padding: const EdgeInsets.all(16),
@@ -354,7 +470,8 @@ class _HppViewState extends State<HppView> {
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                            color: AppColors.primary.withOpacity(0.3)),
+                          color: AppColors.primary.withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -372,8 +489,11 @@ class _HppViewState extends State<HppView> {
                                   color: AppColors.primary.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: const Icon(Icons.fastfood_rounded,
-                                    color: AppColors.primary, size: 28),
+                                child: const Icon(
+                                  Icons.fastfood_rounded,
+                                  color: AppColors.primary,
+                                  size: 28,
+                                ),
                               ),
                             ),
                           ),
@@ -382,26 +502,36 @@ class _HppViewState extends State<HppView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(m.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    )),
+                                Text(
+                                  m.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   "${m.ingredients.length} bahan • Target ${m.targetPorsi} porsi",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12),
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   "Harga jual: Rp ${_fmt(m.hargaJual.toInt())}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                      color: AppColors.secondary,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
+                                    color: AppColors.secondary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -438,27 +568,35 @@ class _HppViewState extends State<HppView> {
                                 ),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.public_rounded,
+                                    Icon(
+                                      Icons.public_rounded,
+                                      color: mode == SumberHarga.lokal
+                                          ? Colors.white
+                                          : Colors.white38,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Harga Lokal",
+                                      style: TextStyle(
                                         color: mode == SumberHarga.lokal
                                             ? Colors.white
                                             : Colors.white38,
-                                        size: 18),
-                                    const SizedBox(height: 4),
-                                    Text("Harga Lokal",
-                                        style: TextStyle(
-                                          color: mode == SumberHarga.lokal
-                                              ? Colors.white
-                                              : Colors.white38,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        )),
-                                    Text("(dari website nasional)",
-                                        style: TextStyle(
-                                          color: mode == SumberHarga.lokal
-                                              ? Colors.white70
-                                              : Colors.white24,
-                                          fontSize: 9,
-                                        )),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "(dari website nasional)",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: mode == SumberHarga.lokal
+                                            ? Colors.white70
+                                            : Colors.white24,
+                                        fontSize: 9,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -472,36 +610,46 @@ class _HppViewState extends State<HppView> {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   gradient: mode == SumberHarga.pasar
-                                      ? const LinearGradient(colors: [
-                                          Color(0xFF2E7D32),
-                                          Color(0xFF1B5E20),
-                                        ])
+                                      ? const LinearGradient(
+                                          colors: [
+                                            Color(0xFF2E7D32),
+                                            Color(0xFF1B5E20),
+                                          ],
+                                        )
                                       : null,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
                                   children: [
-                                    Icon(Icons.store_rounded,
+                                    Icon(
+                                      Icons.store_rounded,
+                                      color: mode == SumberHarga.pasar
+                                          ? Colors.white
+                                          : Colors.white38,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Harga Pasar",
+                                      style: TextStyle(
                                         color: mode == SumberHarga.pasar
                                             ? Colors.white
                                             : Colors.white38,
-                                        size: 18),
-                                    const SizedBox(height: 4),
-                                    Text("Harga Pasar",
-                                        style: TextStyle(
-                                          color: mode == SumberHarga.pasar
-                                              ? Colors.white
-                                              : Colors.white38,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        )),
-                                    Text("(harga beli kamu)",
-                                        style: TextStyle(
-                                          color: mode == SumberHarga.pasar
-                                              ? Colors.white70
-                                              : Colors.white24,
-                                          fontSize: 9,
-                                        )),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "(harga beli kamu)",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: mode == SumberHarga.pasar
+                                            ? Colors.white70
+                                            : Colors.white24,
+                                        fontSize: 9,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -522,16 +670,19 @@ class _HppViewState extends State<HppView> {
                         .toList();
                     final mode = hppCtrl.modeSumber.value;
 
-                    if (m == null) return const SizedBox.shrink();
+                    if (m == null) {
+                      return const SizedBox.shrink();
+                    }
 
                     // Inisialisasi controller input harga pasar
                     for (final item in items) {
                       _hargaPasarControllers.putIfAbsent(
                         item.id,
                         () => TextEditingController(
-                            text: hppCtrl.hargaPasarManual[item.id]
-                                    ?.toStringAsFixed(0) ??
-                                item.pricePerUnit.toStringAsFixed(0)),
+                          text: hppCtrl.hargaPasarManual[item.id]
+                                  ?.toStringAsFixed(0) ??
+                              (item.pricePerUnit * 0.9).toStringAsFixed(0),
+                        ),
                       );
                     }
 
@@ -541,27 +692,34 @@ class _HppViewState extends State<HppView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Komposisi Bahan",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                )),
+                            const Text(
+                              "Komposisi Bahan",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.2)),
+                                  color: AppColors.primary.withOpacity(0.2),
+                                ),
                               ),
-                              child: Text("${items.length} bahan",
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  )),
+                              child: Text(
+                                "${items.length} bahan",
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -574,18 +732,25 @@ class _HppViewState extends State<HppView> {
                               color: AppColors.card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                  color: Colors.orange.withOpacity(0.2)),
+                                color: Colors.orange.withOpacity(0.2),
+                              ),
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.warning_amber_rounded,
-                                    color: Colors.orange, size: 18),
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.orange,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     "Bahan \"${m.name}\" belum ada di inventory. Tambahkan bahan terlebih dahulu.",
                                     style: const TextStyle(
-                                        color: Colors.white60, fontSize: 12),
+                                      color: Colors.white60,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -594,16 +759,17 @@ class _HppViewState extends State<HppView> {
                         else
                           ...items.map((item) {
                             final ing = m.ingredients.firstWhereOrNull(
-                                (i) => i.inventoryItemId == item.id);
+                              (i) => i.inventoryItemId == item.id,
+                            );
                             final qtyNeeded = (ing?.qtyNeeded ?? 1) * m.targetPorsi;
                             final isLoaded = _itemLoaded[item.id] == true;
 
                             // Harga yang ditampilkan sesuai mode
                             final hargaLokal =
-                                _hargaWilayah[item.id] ?? item.pricePerUnit;
+                                _hargaWilayah[item.id] ?? item.pricePerUnit * 0.85;
                             final hargaPasar =
                                 hppCtrl.hargaPasarManual[item.id] ??
-                                    item.pricePerUnit;
+                                    item.pricePerUnit * 0.9;
                             final hargaAktif = mode == SumberHarga.lokal
                                 ? hargaLokal
                                 : hargaPasar;
@@ -627,6 +793,8 @@ class _HppViewState extends State<HppView> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(8),
@@ -637,9 +805,10 @@ class _HppViewState extends State<HppView> {
                                               BorderRadius.circular(10),
                                         ),
                                         child: const Icon(
-                                            Icons.lunch_dining_rounded,
-                                            color: AppColors.primary,
-                                            size: 16),
+                                          Icons.lunch_dining_rounded,
+                                          color: AppColors.primary,
+                                          size: 16,
+                                        ),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(
@@ -647,28 +816,37 @@ class _HppViewState extends State<HppView> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(item.name,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                )),
                                             Text(
-                                              "Kebutuhan: ${qtyNeeded % 1 == 0 ? qtyNeeded.toInt() : qtyNeeded} ${item.unit} • Stok: ${item.stockLabel}",
+                                              item.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
-                                                  color: AppColors
-                                                      .textSecondary,
-                                                  fontSize: 11),
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Kebutuhan: ${qtyNeeded % 1 == 0 ? qtyNeeded.toInt() : qtyNeeded.toStringAsFixed(2)} ${item.unit} • Stok: ${item.stockLabel}",
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 11,
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.end,
                                         children: [
                                           Text(
                                             "Rp ${_fmt(totalHarga.toInt())}",
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: mode == SumberHarga.lokal
                                                   ? Colors.green
@@ -679,9 +857,12 @@ class _HppViewState extends State<HppView> {
                                           ),
                                           Text(
                                             "@ Rp ${_fmt(hargaAktif.toInt())}/${item.unit}",
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
-                                                color: Colors.white38,
-                                                fontSize: 10),
+                                              color: Colors.white38,
+                                              fontSize: 10,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -692,39 +873,57 @@ class _HppViewState extends State<HppView> {
                                     const SizedBox(height: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.green.withOpacity(0.06),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
                                         children: [
-                                          Text(
-                                            "Nasional: Rp ${_fmt(item.pricePerUnit.toInt())}",
-                                            style: const TextStyle(
-                                              color: Colors.white38,
-                                              fontSize: 10,
-                                              decoration:
-                                                  TextDecoration.lineThrough,
-                                              decorationColor: Colors.white38,
+                                          Flexible(
+                                            child: Text(
+                                              "Nasional: Rp ${_fmt(item.pricePerUnit.toInt())}",
+                                              maxLines: 1,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white38,
+                                                fontSize: 10,
+                                                decoration: TextDecoration
+                                                    .lineThrough,
+                                                decorationColor:
+                                                    Colors.white38,
+                                              ),
                                             ),
                                           ),
-                                          const SizedBox(width: 6),
-                                          const Icon(Icons.arrow_forward_rounded,
-                                              color: Colors.green, size: 10),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            "Lokal: Rp ${_fmt(hargaLokal.toInt())}",
-                                            style: const TextStyle(
-                                              color: Colors.green,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.arrow_forward_rounded,
+                                            color: Colors.green,
+                                            size: 10,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              "Lokal: Rp ${_fmt(hargaLokal.toInt())}",
+                                              maxLines: 1,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.green,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
-                                          const Spacer(),
+                                          const SizedBox(width: 4),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 2),
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: Colors.green
                                                   .withOpacity(0.12),
@@ -733,6 +932,9 @@ class _HppViewState extends State<HppView> {
                                             ),
                                             child: Text(
                                               "Hemat ${_fmt((item.pricePerUnit - hargaLokal).toInt())}",
+                                              maxLines: 1,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 9,
@@ -749,32 +951,41 @@ class _HppViewState extends State<HppView> {
                                     const SizedBox(height: 10),
                                     Row(
                                       children: [
-                                        const Icon(Icons.store_rounded,
-                                            color: Colors.orange, size: 14),
+                                        const Icon(
+                                          Icons.store_rounded,
+                                          color: Colors.orange,
+                                          size: 14,
+                                        ),
                                         const SizedBox(width: 6),
-                                        const Text("Harga beli di pasar:",
-                                            style: TextStyle(
-                                                color: Colors.white60,
-                                                fontSize: 11)),
+                                        const Text(
+                                          "Harga beli di pasar:",
+                                          style: TextStyle(
+                                            color: Colors.white60,
+                                            fontSize: 11,
+                                          ),
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: TextField(
                                             controller:
                                                 _hargaPasarControllers[item.id],
                                             style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13),
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                            ),
                                             keyboardType:
                                                 TextInputType.number,
                                             decoration: InputDecoration(
                                               hintText: "Rp / ${item.unit}",
                                               hintStyle: const TextStyle(
-                                                  color: AppColors.textHint,
-                                                  fontSize: 11),
+                                                color: AppColors.textHint,
+                                                fontSize: 11,
+                                              ),
                                               prefixText: "Rp ",
                                               prefixStyle: const TextStyle(
-                                                  color: Colors.orange,
-                                                  fontSize: 13),
+                                                color: Colors.orange,
+                                                fontSize: 13,
+                                              ),
                                               filled: true,
                                               fillColor:
                                                   const Color(0xFF0F172A),
@@ -787,13 +998,15 @@ class _HppViewState extends State<HppView> {
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                                 borderSide: const BorderSide(
-                                                    color: Colors.orange,
-                                                    width: 1.5),
+                                                  color: Colors.orange,
+                                                  width: 1.5,
+                                                ),
                                               ),
                                               contentPadding:
                                                   const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 8),
+                                                horizontal: 10,
+                                                vertical: 8,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -808,10 +1021,11 @@ class _HppViewState extends State<HppView> {
                     );
                   }),
 
-                  // ── TOMBOL HITUNG HARGA PASAR (dipindahkan ke sini) ──
+                  // ── TOMBOL HITUNG HARGA PASAR ──────────────────
                   Obx(() {
-                    if (hppCtrl.modeSumber.value != SumberHarga.pasar)
+                    if (hppCtrl.modeSumber.value != SumberHarga.pasar) {
                       return const SizedBox.shrink();
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 8),
                       child: GestureDetector(
@@ -820,10 +1034,12 @@ class _HppViewState extends State<HppView> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [
-                              Color(0xFF2E7D32),
-                              Color(0xFF1B5E20),
-                            ]),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF2E7D32),
+                                Color(0xFF1B5E20),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
@@ -835,15 +1051,20 @@ class _HppViewState extends State<HppView> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.calculate_rounded,
-                                  color: Colors.white, size: 18),
+                              Icon(
+                                Icons.calculate_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
-                              Text("Hitung HPP Harga Pasar",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  )),
+                              Text(
+                                "Hitung HPP Harga Pasar",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -856,8 +1077,9 @@ class _HppViewState extends State<HppView> {
                   // ── PENGHEMATAN ─────────────────────────────
                   if (_hargaLoaded) ...[
                     Obx(() {
-                      if (hppCtrl.modeSumber.value != SumberHarga.lokal)
+                      if (hppCtrl.modeSumber.value != SumberHarga.lokal) {
                         return const SizedBox.shrink();
+                      }
                       final selisih = hppCtrl.selisihHarga;
                       if (selisih <= 0) return const SizedBox.shrink();
 
@@ -869,9 +1091,11 @@ class _HppViewState extends State<HppView> {
                               color: Colors.green.withOpacity(0.06),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                  color: Colors.green.withOpacity(0.2)),
+                                color: Colors.green.withOpacity(0.2),
+                              ),
                             ),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(10),
@@ -879,8 +1103,11 @@ class _HppViewState extends State<HppView> {
                                     color: Colors.green.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.savings_rounded,
-                                      color: Colors.green, size: 20),
+                                  child: const Icon(
+                                    Icons.savings_rounded,
+                                    color: Colors.green,
+                                    size: 20,
+                                  ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -888,15 +1115,19 @@ class _HppViewState extends State<HppView> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Penghematan Harga Lokal",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          )),
+                                      const Text(
+                                        "Penghematan Harga Lokal",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
                                       const SizedBox(height: 4),
                                       Obx(() => Text(
                                             "vs harga nasional di ${hppCtrl.wilayah.value.split(',').first}:",
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               color: Colors.white54,
                                               fontSize: 11,
@@ -909,6 +1140,8 @@ class _HppViewState extends State<HppView> {
                                 const SizedBox(width: 8),
                                 Text(
                                   "- Rp ${_fmt(selisih.toInt())}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
@@ -956,6 +1189,7 @@ class _HppViewState extends State<HppView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(8),
@@ -976,28 +1210,38 @@ class _HppViewState extends State<HppView> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text("Hasil Analisis HPP",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        )),
-                                    Text(modeLabel,
-                                        style: TextStyle(
-                                            color: modeColor.withOpacity(0.8),
-                                            fontSize: 10),
-                                        overflow: TextOverflow.ellipsis),
+                                    const Text(
+                                      "Hasil Analisis HPP",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    Text(
+                                      modeLabel,
+                                      style: TextStyle(
+                                        color: modeColor.withOpacity(0.8),
+                                        fontSize: 10,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: modeColor.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color: modeColor.withOpacity(0.3)),
+                                    color: modeColor.withOpacity(0.3),
+                                  ),
                                 ),
                                 child: Text(
                                   mode == SumberHarga.lokal
@@ -1021,7 +1265,9 @@ class _HppViewState extends State<HppView> {
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 20),
                                 child: CircularProgressIndicator(
-                                    color: AppColors.secondary, strokeWidth: 2),
+                                  color: AppColors.secondary,
+                                  strokeWidth: 2,
+                                ),
                               ),
                             )
                           else if (tidakAdaBahan)
@@ -1032,9 +1278,10 @@ class _HppViewState extends State<HppView> {
                                   "Menu belum punya bahan baku.\nTambahkan bahan terlebih dahulu.",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 13,
-                                      height: 1.5),
+                                    color: Colors.white38,
+                                    fontSize: 13,
+                                    height: 1.5,
+                                  ),
                                 ),
                               ),
                             )
@@ -1049,9 +1296,10 @@ class _HppViewState extends State<HppView> {
                                       : "Isi harga beli di pasar lalu tap\n'Hitung HPP Harga Pasar'",
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 13,
-                                      height: 1.5),
+                                    color: Colors.white38,
+                                    fontSize: 13,
+                                    height: 1.5,
+                                  ),
                                 ),
                               ),
                             )
@@ -1081,17 +1329,22 @@ class _HppViewState extends State<HppView> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text("Rekomendasi Harga Jual",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          )),
+                                      const Text(
+                                        "Rekomendasi Harga Jual",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                       Text(
                                         "HPP × 1.4 — margin 29% (${mode == SumberHarga.lokal ? 'harga lokal' : 'harga pasar'})",
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                            color: Colors.white38,
-                                            fontSize: 10),
+                                          color: Colors.white38,
+                                          fontSize: 10,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1099,6 +1352,8 @@ class _HppViewState extends State<HppView> {
                                 const SizedBox(width: 12),
                                 Text(
                                   "Rp ${_fmt(rekomendasi.toInt())}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: modeColor,
                                     fontWeight: FontWeight.bold,
@@ -1121,11 +1376,14 @@ class _HppViewState extends State<HppView> {
                                 ),
                                 child: Column(
                                   children: [
-                                    const Text("Perbandingan HPP",
-                                        style: TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold)),
+                                    const Text(
+                                      "Perbandingan HPP",
+                                      style: TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
@@ -1161,7 +1419,8 @@ class _HppViewState extends State<HppView> {
                                 color: modeColor.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                    color: modeColor.withOpacity(0.2)),
+                                  color: modeColor.withOpacity(0.2),
+                                ),
                               ),
                               child: Row(
                                 mainAxisAlignment:
@@ -1176,22 +1435,33 @@ class _HppViewState extends State<HppView> {
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
-                                        child: Icon(Icons.trending_up_rounded,
-                                            color: modeColor, size: 14),
+                                        child: Icon(
+                                          Icons.trending_up_rounded,
+                                          color: modeColor,
+                                          size: 14,
+                                        ),
                                       ),
                                       const SizedBox(width: 10),
-                                      const Text("Estimasi Profit",
-                                          style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 14)),
+                                      const Text(
+                                        "Estimasi Profit",
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 14,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  Text(
-                                    "Rp ${_fmt(profit.toInt())}",
-                                    style: TextStyle(
-                                      color: modeColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                  Flexible(
+                                    child: Text(
+                                      "Rp ${_fmt(profit.toInt())}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color: modeColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1220,13 +1490,17 @@ class _HppViewState extends State<HppView> {
                         color: AppColors.secondary.withOpacity(0.06),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: AppColors.secondary.withOpacity(0.2)),
+                          color: AppColors.secondary.withOpacity(0.2),
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.lightbulb_outline_rounded,
-                              color: AppColors.secondary, size: 16),
+                          const Icon(
+                            Icons.lightbulb_outline_rounded,
+                            color: AppColors.secondary,
+                            size: 16,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -1256,7 +1530,8 @@ class _HppViewState extends State<HppView> {
                         gradient: sudah
                             ? AppColors.brandGradient
                             : const LinearGradient(
-                                colors: [Colors.white12, Colors.white12]),
+                                colors: [Colors.white12, Colors.white12],
+                              ),
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: sudah
                             ? [
@@ -1282,18 +1557,27 @@ class _HppViewState extends State<HppView> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.restaurant_rounded,
-                                    color: sudah ? Colors.white : Colors.white38,
-                                    size: 20),
+                                Icon(
+                                  Icons.restaurant_rounded,
+                                  color: sudah ? Colors.white : Colors.white38,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 10),
-                                Text(
-                                  sudah
-                                      ? "Lanjut ke Produksi"
-                                      : "Hitung HPP Terlebih Dahulu",
-                                  style: TextStyle(
-                                    color: sudah ? Colors.white : Colors.white38,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                Flexible(
+                                  child: Text(
+                                    sudah
+                                        ? "Lanjut ke Produksi"
+                                        : "Hitung HPP Terlebih Dahulu",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: sudah
+                                          ? Colors.white
+                                          : Colors.white38,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1323,17 +1607,34 @@ class _HppViewState extends State<HppView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text("HPP: Rp ${_fmt(hpp.toInt())}",
-              style: const TextStyle(color: Colors.white70, fontSize: 11)),
-          Text("Jual: Rp ${_fmt(rekomendasi.toInt())}",
-              style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            "HPP: Rp ${_fmt(hpp.toInt())}",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+            ),
+          ),
+          Text(
+            "Jual: Rp ${_fmt(rekomendasi.toInt())}",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -1350,20 +1651,26 @@ class _HppViewState extends State<HppView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(title,
-              style: TextStyle(
-                color: titleColor,
-                fontSize: isBold ? 14 : 13,
-                fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
-              )),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: titleColor,
+              fontSize: isBold ? 14 : 13,
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
         ),
         const SizedBox(width: 12),
-        Text(value,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.bold,
-              fontSize: isBold ? 16 : 14,
-            )),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: valueColor,
+            fontWeight: FontWeight.bold,
+            fontSize: isBold ? 16 : 14,
+          ),
+        ),
       ],
     );
   }

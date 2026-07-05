@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; 
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../routes/app_pages.dart';
+import 'informasi_pengguna_view.dart';
+import '../../best_menu/controllers/best_menu_controller.dart';
+import '../../../../controllers/models/sales_controller.dart';
 
 class ProfilView extends StatefulWidget {
   const ProfilView({super.key});
@@ -12,13 +17,20 @@ class ProfilView extends StatefulWidget {
 }
 
 class _ProfilViewState extends State<ProfilView> {
-  final SupabaseClient _supabase = Supabase.instance.client; 
+  final SupabaseClient _supabase = Supabase.instance.client;
   Future<Map<String, dynamic>?>? _profileFuture;
+  bool _isUploadingPhoto = false;
+
+  // Tambahkan controller
+  final SalesController _salesController = Get.find<SalesController>();
+  final BestMenuController _bestMenuController = Get.find<BestMenuController>();
 
   @override
   void initState() {
     super.initState();
-    _fetchProfileData(); 
+    _fetchProfileData();
+    // Data penjualan dan menu otomatis ter-load dari stream
+    // Tidak perlu panggil method apapun
   }
 
   void _fetchProfileData() {
@@ -29,8 +41,130 @@ class _ProfilViewState extends State<ProfilView> {
             .from('profiles')
             .select()
             .eq('id', user.id)
-            .single(); 
+            .maybeSingle();
       });
+    }
+  }
+
+  // ── UPLOAD FOTO PROFIL ──────────────────────────────────────────
+  Future<void> _pickAndUploadPhoto() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
+    if (image == null) return;
+
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      final file = File(image.path);
+      final fileExt = image.path.split('.').last;
+      final fileName = '${user.id}/avatar.$fileExt';
+
+      await _supabase.storage.from('avatars').upload(
+            fileName,
+            file,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final publicUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      final urlWithTimestamp =
+          '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _supabase
+          .from('profiles')
+          .update({'avatar_url': urlWithTimestamp})
+          .eq('id', user.id);
+
+      _fetchProfileData();
+      Get.snackbar(
+        'Berhasil',
+        'Foto profil berhasil diperbarui',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Gagal',
+        'Gagal mengupload foto: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  // ── EDIT NAMA ────────────────────────────────────────────────────
+  Future<void> _editName(String currentName) async {
+    final controller = TextEditingController(text: currentName);
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    final result = await Get.dialog<bool>(
+      AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit Nama', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Masukkan nama',
+            hintStyle: const TextStyle(color: Colors.white38),
+            filled: true,
+            fillColor: const Color(0xFF0F172A),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Batal', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.secondary)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && controller.text.trim().isNotEmpty) {
+      try {
+        await _supabase
+            .from('profiles')
+            .update({'nama_pemilik': controller.text.trim()})
+            .eq('id', user.id);
+        _fetchProfileData();
+        Get.snackbar(
+          'Berhasil',
+          'Nama berhasil diperbarui',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      } catch (e) {
+        Get.snackbar(
+          'Gagal',
+          'Gagal memperbarui nama: $e',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
     }
   }
 
@@ -135,20 +269,21 @@ class _ProfilViewState extends State<ProfilView> {
                       }
 
                       final currentUser = _supabase.auth.currentUser;
-                      String displayName = "Pengguna KitchFlow"; 
+                      String displayName = "Pengguna KitchFlow";
                       String emailUser = currentUser?.email ?? "-";
+                      String? avatarUrl;
 
                       if (snapshot.hasData && snapshot.data != null) {
                         final profileData = snapshot.data!;
-                        
-                        // Membaca 'nama_pemilik' dari tabel profiles
-                        if (profileData['nama_pemilik'] != null && profileData['nama_pemilik'].toString().isNotEmpty) {
+
+                        if (profileData['nama_pemilik'] != null &&
+                            profileData['nama_pemilik'].toString().isNotEmpty) {
                           displayName = profileData['nama_pemilik'];
-                        } 
-                        // Fallback ke Nama Google Auth jika nama_pemilik kosong
-                        else if (currentUser?.userMetadata?['full_name'] != null) {
+                        } else if (currentUser?.userMetadata?['full_name'] != null) {
                           displayName = currentUser!.userMetadata!['full_name'];
                         }
+
+                        avatarUrl = profileData['avatar_url'];
                       } else {
                         if (currentUser?.userMetadata?['full_name'] != null) {
                           displayName = currentUser!.userMetadata!['full_name'];
@@ -156,33 +291,43 @@ class _ProfilViewState extends State<ProfilView> {
                       }
 
                       return _buildProfileCard(
-                        namaUser: displayName, 
-                        emailUser: emailUser,       
+                        namaUser: displayName,
+                        emailUser: emailUser,
+                        avatarUrl: avatarUrl,
                       );
                     },
                   ),
 
                   const SizedBox(height: 20),
 
-                  // ── BUSINESS STAT ────────────────────────────────
+                  // ── BUSINESS STAT (DENGAN DATA REAL) ─────────────
                   Row(
                     children: [
                       Expanded(
-                        child: _statCard(
-                          "Profit\nBulan Ini",
-                          "Rp 1,2M",
-                          Icons.trending_up_rounded,
-                          Colors.green,
-                        ),
+                        child: Obx(() {
+                          // 0 = Harian (sama seperti di AnalyticsView)
+                          final stats = _salesController.statsForPeriod(0);
+                          final totalPenjualan = _formatRupiah(stats.total);
+                          return _statCard(
+                            "Penjualan\nHari Ini",
+                            totalPenjualan,
+                            Icons.trending_up_rounded,
+                            Colors.green,
+                          );
+                        }),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _statCard(
-                          "Menu\nAktif",
-                          "18",
-                          Icons.restaurant_menu_rounded,
-                          AppColors.secondary,
-                        ),
+                        child: Obx(() {
+                          // Hitung total menu (sama seperti di AnalyticsView)
+                          final totalMenus = _bestMenuController.menus.length;
+                          return _statCard(
+                            "Total\nMenu",
+                            "$totalMenus",
+                            Icons.restaurant_menu_rounded,
+                            AppColors.secondary,
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -198,12 +343,14 @@ class _ProfilViewState extends State<ProfilView> {
                     color: AppColors.primary,
                     title: "Informasi Pengguna",
                     subtitle: "Nama lengkap, data diri, kontak",
+                    onTap: () => Get.to(() => const InformasiPenggunaView()),
                   ),
                   _menuTile(
                     icon: Icons.security_rounded,
                     color: Colors.blue,
                     title: "Keamanan & Password",
                     subtitle: "Password dan autentikasi",
+                    onTap: () => Get.to(() => const InformasiPenggunaView()),
                   ),
 
                   const SizedBox(height: 40),
@@ -284,7 +431,11 @@ class _ProfilViewState extends State<ProfilView> {
   }
 
   // ── CARD PROFILE WIDGET ──────────────────────────────────────────
-  Widget _buildProfileCard({required String namaUser, required String emailUser}) {
+  Widget _buildProfileCard({
+    required String namaUser,
+    required String emailUser,
+    String? avatarUrl,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -305,23 +456,69 @@ class _ProfilViewState extends State<ProfilView> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 74,
-            height: 74,
-            decoration: BoxDecoration(
-              gradient: AppColors.brandGradient,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.4),
-                  blurRadius: 18,
+          // ── AVATAR (bisa diklik untuk ganti foto) ──────────────
+          GestureDetector(
+            onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+            child: Stack(
+              children: [
+                Container(
+                  width: 74,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    gradient: (avatarUrl == null || avatarUrl.isEmpty)
+                        ? AppColors.brandGradient
+                        : null,
+                    shape: BoxShape.circle,
+                    image: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? DecorationImage(
+                            image: NetworkImage(avatarUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.4),
+                        blurRadius: 18,
+                      ),
+                    ],
+                  ),
+                  child: _isUploadingPhoto
+                      ? const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : ((avatarUrl == null || avatarUrl.isEmpty)
+                          ? const Icon(
+                              Icons.person_rounded,
+                              color: Colors.white,
+                              size: 34,
+                            )
+                          : null),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF0D1F3C), width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  ),
                 ),
               ],
-            ),
-            child: const Icon(
-              Icons.person_rounded, // Diubah ke ikon orang biasa karena bukan toko/warteg lagi
-              color: Colors.white,
-              size: 34,
             ),
           ),
           const SizedBox(width: 16),
@@ -330,7 +527,7 @@ class _ProfilViewState extends State<ProfilView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  namaUser, 
+                  namaUser,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -339,7 +536,7 @@ class _ProfilViewState extends State<ProfilView> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  emailUser, 
+                  emailUser,
                   style: const TextStyle(
                     color: Colors.white38,
                     fontSize: 12,
@@ -356,8 +553,9 @@ class _ProfilViewState extends State<ProfilView> {
               ],
             ),
           ),
+          // ── TOMBOL EDIT NAMA ─────────────────────────────────────
           GestureDetector(
-            onTap: () {},
+            onTap: () => _editName(namaUser),
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -455,56 +653,75 @@ class _ProfilViewState extends State<ProfilView> {
     required Color color,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 18),
             ),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 11,
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: Colors.white24,
-            size: 14,
-          ),
-        ],
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white24,
+              size: 14,
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  // ── FORMAT RUPIAH (sama dengan di AnalyticsView) ──────────────
+  String _formatRupiah(double value) {
+    final str = value.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      final posFromRight = str.length - i;
+      buffer.write(str[i]);
+      if (posFromRight > 1 && posFromRight % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return "Rp $buffer";
   }
 }
