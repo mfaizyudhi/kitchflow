@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../services/auth_service.dart';
+import 'face_register_view.dart';
 
 class OtpVerificationView extends StatefulWidget {
   final String email;
@@ -51,6 +53,121 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
 
   String get _otpCode => _controllers.map((c) => c.text).join();
 
+  // ✅ BARU — method dialog face register
+  void _showFaceRegisterDialog() {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111C2E),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon wajah
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: AppColors.brandGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.face_outlined,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              const Text(
+                "Aktifkan Face Login?",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              const Text(
+                "Daftarkan wajah kamu sekarang agar bisa login lebih cepat tanpa ketik password!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Tombol daftarkan wajah
+              Container(
+                width: double.infinity,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: AppColors.brandGradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      Get.back(); // tutup dialog
+                      final userId =
+                          Supabase.instance.client.auth.currentUser?.id ?? '';
+                      Get.to(() => FaceRegisterView(userId: userId))
+                          ?.then((_) => Get.offAllNamed('/login'));
+                    },
+                    child: const Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.face_outlined,
+                              color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            "Daftarkan Wajah Sekarang",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Lewati
+              GestureDetector(
+                onTap: () {
+                  Get.back(); // tutup dialog
+                  Get.offAllNamed('/login');
+                },
+                child: const Text(
+                  "Lewati, nanti saja",
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
   Future<void> _handleVerify() async {
     if (_otpCode.length < 6) {
       Get.snackbar("Peringatan", "Masukkan 6 digit kode OTP",
@@ -94,17 +211,19 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         color: Colors.green, size: 54),
                   ),
                   const SizedBox(height: 20),
-                  const Text("Akun Terverifikasi!",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Akun Terverifikasi!",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 10),
                   const Text(
                     "Email Anda berhasil diverifikasi. Silakan masuk untuk melanjutkan.",
                     textAlign: TextAlign.center,
-                    style:
-                        TextStyle(color: Colors.white60, fontSize: 13, height: 1.5),
+                    style: TextStyle(
+                        color: Colors.white60, fontSize: 13, height: 1.5),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -116,10 +235,17 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: () => Get.offAllNamed('/login'),
-                      child: const Text("Mulai Eksplorasi",
-                          style: TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold)),
+                      // ✅ DIUBAH — dari Get.offAllNamed('/login')
+                      // menjadi tampilkan dialog face register
+                      onPressed: () {
+                        Get.back(); // tutup dialog sukses OTP
+                        _showFaceRegisterDialog(); // tampilkan dialog face
+                      },
+                      child: const Text(
+                        "Mulai Eksplorasi",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -149,15 +275,21 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
       _startCountdown();
       for (var c in _controllers) c.clear();
       _focusNodes[0].requestFocus();
-      Get.snackbar("Berhasil", "Kode OTP baru telah dikirim ke email Anda",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        "Berhasil",
+        "Kode OTP baru telah dikirim ke email Anda",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     } catch (e) {
-      Get.snackbar("Gagal", e.toString().replaceAll("Exception: ", ""),
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        "Gagal",
+        e.toString().replaceAll("Exception: ", ""),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
@@ -252,7 +384,6 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Subtitle
                   Text(
                     "Masukkan 6 digit kode yang dikirim ke",
                     style: const TextStyle(color: Colors.white54, fontSize: 14),
@@ -269,7 +400,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
 
                   const SizedBox(height: 40),
 
-                  // ── CARD OTP ──
+                  // CARD OTP
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 24),
@@ -280,7 +411,6 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     ),
                     child: Column(
                       children: [
-                        // Label
                         const Text(
                           "Kode Verifikasi",
                           style: TextStyle(
@@ -291,23 +421,24 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                         ),
                         const SizedBox(height: 20),
 
-                        // ── 6 KOTAK OTP — ukuran fixed 48x56 ──
+                        // 6 Kotak OTP
                         LayoutBuilder(
-  builder: (context, constraints) {
-    final boxWidth = (constraints.maxWidth - 40) / 6;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(
-        6,
-        (i) => SizedBox(
-          width: boxWidth.clamp(40.0, 50.0),
-          child: _buildOtpBox(i),
-        ),
-      ),
-    );
-  },
-),
+                          builder: (context, constraints) {
+                            final boxWidth =
+                                (constraints.maxWidth - 40) / 6;
+                            return Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: List.generate(
+                                6,
+                                (i) => SizedBox(
+                                  width: boxWidth.clamp(40.0, 50.0),
+                                  child: _buildOtpBox(i),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
 
                         const SizedBox(height: 28),
 
@@ -343,7 +474,8 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 16,
-                                                  fontWeight: FontWeight.bold)),
+                                                  fontWeight:
+                                                      FontWeight.bold)),
                                           SizedBox(width: 8),
                                           Icon(Icons.verified_rounded,
                                               color: Colors.white, size: 20),
@@ -420,55 +552,46 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
     );
   }
 
-  // ── KOTAK OTP — ukuran fixed, border jelas ──
   Widget _buildOtpBox(int index) {
-  return SizedBox(
-    height: 56,
-    child: TextField(
-      controller: _controllers[index],
-      focusNode: _focusNodes[index],
-      textAlign: TextAlign.center,
-      keyboardType: TextInputType.number,
-      maxLength: 1,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-      ),
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-      ],
-      decoration: InputDecoration(
-        counterText: "",
-        filled: true,
-        fillColor: const Color(0xFF0F172A),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Colors.white24,
-            width: 1.5,
+    return SizedBox(
+      height: 56,
+      child: TextField(
+        controller: _controllers[index],
+        focusNode: _focusNodes[index],
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(
+          counterText: "",
+          filled: true,
+          fillColor: const Color(0xFF0F172A),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.white24, width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide:
+                const BorderSide(color: AppColors.primary, width: 2),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
-        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && index < 5) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (value.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+          if (_otpCode.length == 6) {
+            _handleVerify();
+          }
+        },
       ),
-      onChanged: (value) {
-        if (value.isNotEmpty && index < 5) {
-          _focusNodes[index + 1].requestFocus();
-        } else if (value.isEmpty && index > 0) {
-          _focusNodes[index - 1].requestFocus();
-        }
-
-        if (_otpCode.length == 6) {
-          _handleVerify();
-        }
-      },
-    ),
-  );
-}
+    );
+  }
 }

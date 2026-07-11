@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../services/auth_service.dart';
+import '../../../../services/face_recognition_service.dart';
+import 'face_login_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -14,15 +17,57 @@ class _LoginViewState extends State<LoginView> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _faceLoginAvailable = false; // ✅ TAMBAH
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  // ✅ TAMBAH initState
+  @override
+  void initState() {
+    super.initState();
+    _checkFaceLoginAvailable();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // ✅ TAMBAH — cek apakah face login tersedia
+  Future<void> _checkFaceLoginAvailable() async {
+    final userId = await FaceRecognitionService.getRegisteredUserId();
+    if (userId != null) {
+      final registered =
+          await FaceRecognitionService.isFaceRegistered(userId);
+      if (mounted) setState(() => _faceLoginAvailable = registered);
+    }
+  }
+
+  // ✅ TAMBAH — handle face login
+  Future<void> _handleFaceLogin() async {
+    Get.to(() => FaceLoginView(
+      onSuccess: () async {
+        final prefs = await SharedPreferences.getInstance();
+        final email = prefs.getString('saved_email') ?? '';
+        final password = prefs.getString('saved_password') ?? '';
+
+        if (email.isNotEmpty) {
+          await AuthService.login(email: email, password: password);
+          Get.offAllNamed('/main');
+        } else {
+          Get.snackbar(
+            "Belum Ada Akun Tersimpan",
+            "Silakan login manual terlebih dahulu",
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+          );
+        }
+      },
+    ));
   }
 
   Future<void> _handleLogin() async {
@@ -44,6 +89,12 @@ class _LoginViewState extends State<LoginView> {
 
     try {
       await AuthService.login(email: email, password: password);
+
+      // ✅ TAMBAH — simpan kredensial untuk face login
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_email', email);
+      await prefs.setString('saved_password', password);
+
       Get.offAllNamed('/main');
     } catch (e) {
       Get.snackbar(
@@ -227,14 +278,11 @@ class _LoginViewState extends State<LoginView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         /// EMAIL
-                        const Text(
-                          "Email",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        const Text("Email",
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _emailController,
@@ -244,17 +292,13 @@ class _LoginViewState extends State<LoginView> {
                             hintText: "contoh@email.com",
                             hintStyle: const TextStyle(
                                 color: AppColors.textHint, fontSize: 14),
-                            prefixIcon: const Icon(
-                              Icons.email_outlined,
-                              color: AppColors.textSecondary,
-                              size: 20,
-                            ),
+                            prefixIcon: const Icon(Icons.email_outlined,
+                                color: AppColors.textSecondary, size: 20),
                             filled: true,
                             fillColor: const Color(0xFF0F172A),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide.none),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
@@ -266,14 +310,11 @@ class _LoginViewState extends State<LoginView> {
                         const SizedBox(height: 20),
 
                         /// PASSWORD
-                        const Text(
-                          "Password",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        const Text("Password",
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _passwordController,
@@ -284,13 +325,12 @@ class _LoginViewState extends State<LoginView> {
                             hintStyle: const TextStyle(
                                 color: AppColors.textHint, fontSize: 14),
                             prefixIcon: const Icon(
-                              Icons.lock_outline_rounded,
-                              color: AppColors.textSecondary,
-                              size: 20,
-                            ),
+                                Icons.lock_outline_rounded,
+                                color: AppColors.textSecondary,
+                                size: 20),
                             suffixIcon: GestureDetector(
-                              onTap: () => setState(
-                                  () => _obscurePassword = !_obscurePassword),
+                              onTap: () => setState(() =>
+                                  _obscurePassword = !_obscurePassword),
                               child: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_off_outlined
@@ -302,9 +342,8 @@ class _LoginViewState extends State<LoginView> {
                             filled: true,
                             fillColor: const Color(0xFF0F172A),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide.none),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
@@ -323,10 +362,9 @@ class _LoginViewState extends State<LoginView> {
                             child: const Text(
                               "Lupa Password?",
                               style: TextStyle(
-                                color: AppColors.secondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
+                                  color: AppColors.secondary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500),
                             ),
                           ),
                         ),
@@ -347,8 +385,8 @@ class _LoginViewState extends State<LoginView> {
                                 ? []
                                 : [
                                     BoxShadow(
-                                      color:
-                                          AppColors.primary.withOpacity(0.4),
+                                      color: AppColors.primary
+                                          .withOpacity(0.4),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                     ),
@@ -365,22 +403,18 @@ class _LoginViewState extends State<LoginView> {
                                         width: 22,
                                         height: 22,
                                         child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      )
+                                            color: Colors.white,
+                                            strokeWidth: 2.5))
                                     : const Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            "Masuk",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                          Text("Masuk",
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight:
+                                                      FontWeight.bold)),
                                           SizedBox(width: 8),
                                           Icon(Icons.arrow_forward_rounded,
                                               color: Colors.white, size: 20),
@@ -396,19 +430,16 @@ class _LoginViewState extends State<LoginView> {
                         /// DIVIDER
                         Row(
                           children: [
-                            Expanded(
-                                child: Divider(color: Colors.white12)),
+                            Expanded(child: Divider(color: Colors.white12)),
                             const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                "atau",
-                                style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12),
-                              ),
+                              padding:
+                                  EdgeInsets.symmetric(horizontal: 12),
+                              child: Text("atau",
+                                  style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12)),
                             ),
-                            Expanded(
-                                child: Divider(color: Colors.white12)),
+                            Expanded(child: Divider(color: Colors.white12)),
                           ],
                         ),
 
@@ -423,20 +454,19 @@ class _LoginViewState extends State<LoginView> {
                                 ? null
                                 : _handleGoogleLogin,
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white24),
+                              side: const BorderSide(
+                                  color: Colors.white24),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                                  borderRadius:
+                                      BorderRadius.circular(16)),
                             ),
                             child: _isGoogleLoading
                                 ? const SizedBox(
                                     width: 22,
                                     height: 22,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
+                                        color: Colors.white,
+                                        strokeWidth: 2.5))
                                 : Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.center,
@@ -447,17 +477,49 @@ class _LoginViewState extends State<LoginView> {
                                         height: 22,
                                       ),
                                       const SizedBox(width: 10),
-                                      const Text(
-                                        "Login dengan Google",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                      const Text("Login dengan Google",
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight:
+                                                  FontWeight.bold)),
                                     ],
                                   ),
                           ),
                         ),
+
+                        // ✅ TAMBAH — tombol face login (muncul kondisional)
+                        if (_faceLoginAvailable) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton(
+                              onPressed: _handleFaceLogin,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                    color: Colors.white24),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(16)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.face_outlined,
+                                      color: Colors.white, size: 22),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Login dengan Wajah",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 24),
 
@@ -475,9 +537,8 @@ class _LoginViewState extends State<LoginView> {
                                   TextSpan(
                                     text: "Daftar Sekarang",
                                     style: TextStyle(
-                                      color: AppColors.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        color: AppColors.secondary,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -500,8 +561,8 @@ class _LoginViewState extends State<LoginView> {
                         const SizedBox(width: 6),
                         const Text(
                           "Data Anda aman & terenkripsi",
-                          style:
-                              TextStyle(color: Colors.white24, fontSize: 12),
+                          style: TextStyle(
+                              color: Colors.white24, fontSize: 12),
                         ),
                       ],
                     ),

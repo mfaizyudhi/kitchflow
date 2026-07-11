@@ -63,7 +63,7 @@ class _TambahBahanViewState extends State<TambahBahanView> {
         pricePerUnit: harga,
         category:     _selectedKategori,
         status:       InventoryItem.resolveStatus(stok),
-        imagePath:    'assets/images/food_ai.jpg',
+        imagePath:    'assets/images/bahanmakanan.jpg',
       );
 
       await InventoryController.to.addItem(item);

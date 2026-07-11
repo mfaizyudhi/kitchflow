@@ -19,6 +19,7 @@ class ProfilView extends StatefulWidget {
 class _ProfilViewState extends State<ProfilView> {
   final SupabaseClient _supabase = Supabase.instance.client;
   Future<Map<String, dynamic>?>? _profileFuture;
+  Future<List<Map<String, dynamic>>>? _activityLogsFuture;
   bool _isUploadingPhoto = false;
 
   // Tambahkan controller
@@ -29,6 +30,7 @@ class _ProfilViewState extends State<ProfilView> {
   void initState() {
     super.initState();
     _fetchProfileData();
+    _fetchActivityLogs();
     // Data penjualan dan menu otomatis ter-load dari stream
     // Tidak perlu panggil method apapun
   }
@@ -44,6 +46,22 @@ class _ProfilViewState extends State<ProfilView> {
             .maybeSingle();
       });
     }
+  }
+
+  // ── FETCH LOG AKTIVITAS ────────────────────────────────────────
+  void _fetchActivityLogs() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _activityLogsFuture = _supabase
+          .from('activity_logs')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false)
+          .limit(10)
+          .then((data) => List<Map<String, dynamic>>.from(data));
+    });
   }
 
   // ── UPLOAD FOTO PROFIL ──────────────────────────────────────────
@@ -334,6 +352,27 @@ class _ProfilViewState extends State<ProfilView> {
 
                   const SizedBox(height: 28),
 
+                  // ── LOG AKTIVITAS ─────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _sectionTitle("Aktivitas Terbaru"),
+                      GestureDetector(
+                        onTap: _fetchActivityLogs,
+                        child: const Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white38,
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  _buildActivityLogSection(),
+
+                  const SizedBox(height: 28),
+
                   // ── PENGATURAN AKUN ──────────────────────────────
                   _sectionTitle("Pengaturan Akun"),
                   const SizedBox(height: 14),
@@ -572,6 +611,171 @@ class _ProfilViewState extends State<ProfilView> {
         ],
       ),
     );
+  }
+
+  // ── SECTION LOG AKTIVITAS ─────────────────────────────────────────
+  Widget _buildActivityLogSection() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _activityLogsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: const Center(
+              child: Text(
+                "Gagal memuat aktivitas",
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              ),
+            ),
+          );
+        }
+
+        final logs = snapshot.data ?? [];
+
+        if (logs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: const Center(
+              child: Text(
+                "Belum ada aktivitas",
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          children: logs.map((log) => _activityTile(log)).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _activityTile(Map<String, dynamic> log) {
+    final type = log['activity_type'] as String? ?? '';
+    final title = log['title'] as String? ?? '';
+    final description = log['description'] as String?;
+    final createdAt = DateTime.tryParse(log['created_at']?.toString() ?? '');
+
+    final iconData = _iconForType(type);
+    final color = _colorForType(type);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(iconData, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (description != null && description.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (createdAt != null)
+            Text(
+              _formatWaktuRelatif(createdAt),
+              style: const TextStyle(color: Colors.white24, fontSize: 10),
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconForType(String type) {
+    switch (type) {
+      case 'tambah_menu':
+        return Icons.restaurant_menu_rounded;
+      case 'hapus_menu':
+        return Icons.delete_outline_rounded;
+      case 'tambah_bahan':
+        return Icons.inventory_2_outlined;
+      case 'hapus_bahan':
+        return Icons.remove_circle_outline_rounded;
+      case 'penjualan':
+        return Icons.point_of_sale_rounded;
+      default:
+        return Icons.history_rounded;
+    }
+  }
+
+  Color _colorForType(String type) {
+    switch (type) {
+      case 'tambah_menu':
+      case 'tambah_bahan':
+        return Colors.green;
+      case 'hapus_menu':
+      case 'hapus_bahan':
+        return Colors.redAccent;
+      case 'penjualan':
+        return AppColors.secondary;
+      default:
+        return Colors.white54;
+    }
+  }
+
+  String _formatWaktuRelatif(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'Baru saja';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m lalu';
+    if (diff.inHours < 24) return '${diff.inHours}j lalu';
+    return '${diff.inDays}h lalu';
   }
 
   // ── HELPERS ──────────────────────────────────────────────────────

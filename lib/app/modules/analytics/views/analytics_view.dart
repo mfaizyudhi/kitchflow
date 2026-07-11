@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../best_menu/controllers/best_menu_controller.dart';
 import '../../../../controllers/models/sales_controller.dart';
+import '../../../../services/activity_log_service.dart';
 
 class AnalyticsView extends StatefulWidget {
   const AnalyticsView({super.key});
@@ -670,6 +671,13 @@ class _AnalyticsViewState extends State<AnalyticsView> {
                           qty: qty,
                           hargaSatuan: selectedMenu.hargaJual,
                         );
+
+                        await ActivityLogService.log(
+    type: 'penjualan',
+    title: 'Penjualan dicatat',
+    description:
+        '${selectedMenu.name} x$qty (${_formatRupiah(selectedMenu.hargaJual * qty)})',
+  );
 
                         Get.back();
                         Get.snackbar(

@@ -1,11 +1,10 @@
 // lib/controllers/best_menu_controller.dart
 
-// lib/controllers/best_menu_controller.dart
-
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:kitchflow/controllers/models/menu_item.dart';
 import 'package:kitchflow/controllers/models/menu_ingredient.dart';
+import '../../../../services/activity_log_service.dart';
 
 export 'package:kitchflow/controllers/models/menu_item.dart';
 export 'package:kitchflow/controllers/models/menu_ingredient.dart';
@@ -96,10 +95,8 @@ class BestMenuController extends GetxController {
     }
   }
 
-  // ── CRUD
-
   // ── CRUD ──────────────────────────────────────────────────────────────────
-  
+
   /// TAMBAH MENU DENGAN QTY PER BAHAN
   Future<void> addMenu({
     required String name,
@@ -137,12 +134,31 @@ class BestMenuController extends GetxController {
       }
       await _sb.from('menu_ingredients').insert(ingredients);
     }
+
+    // ✅ 3. Catat log SETELAH semua insert sukses
+    await ActivityLogService.log(
+      type: 'tambah_menu',
+      title: 'Menu baru ditambahkan',
+      description: name,
+    );
   }
 
   Future<void> deleteMenu(String menuId) async {
+    // ✅ Ambil nama menu SEBELUM dihapus dari database & state
+    final menuIndex = menus.indexWhere((m) => m.id == menuId);
+    final menuName =
+        menuIndex >= 0 ? menus[menuIndex].name : 'Menu tidak dikenal';
+
     await _sb.from('menu_ingredients').delete().eq('menu_id', menuId);
     await _sb.from('hpp_results').delete().eq('menu_id', menuId);
     await _sb.from('menus').delete().eq('id', menuId);
     if (activeMenu.value?.id == menuId) activeMenu.value = null;
+
+    // ✅ Catat log SETELAH delete sukses
+    await ActivityLogService.log(
+      type: 'hapus_menu',
+      title: 'Menu dihapus',
+      description: menuName,
+    );
   }
 }
