@@ -16,8 +16,8 @@ class DashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dash     = DashboardController.to;
-    final inv      = InventoryController.to;
+    final dash = DashboardController.to;
+    final inv = InventoryController.to;
     final menuCtrl = BestMenuController.to;
 
     return Scaffold(
@@ -26,26 +26,30 @@ class DashboardView extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Positioned(
-            top: -80, right: -60,
+            top: -80,
+            right: -60,
             child: Container(
-              width: 220, height: 220,
+              width: 220,
+              height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  AppColors.primary.withOpacity(0.2),
+                  AppColors.primary.withValues(alpha: 0.2),
                   Colors.transparent,
                 ]),
               ),
             ),
           ),
           Positioned(
-            bottom: 100, left: -60,
+            bottom: 100,
+            left: -60,
             child: Container(
-              width: 180, height: 180,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  AppColors.secondary.withOpacity(0.1),
+                  AppColors.secondary.withValues(alpha: 0.1),
                   Colors.transparent,
                 ]),
               ),
@@ -61,18 +65,18 @@ class DashboardView extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   Obx(() => _buildProfitCard(
-                    keuntungan:  dash.estimasiKeuntungan.value,
-                    stok:        dash.totalStokQty.value,
-                    menuCount:   dash.totalProduksiMenu.value,
-                    isConfirmed: dash.isDataFinal,
-                  )),
+                        keuntungan: dash.estimasiKeuntungan.value,
+                        stok: dash.totalStokQty.value,
+                        menuCount: dash.totalProduksiMenu.value,
+                        isConfirmed: dash.isDataFinal,
+                      )),
                   const SizedBox(height: 16),
 
                   Obx(() => _buildStockAlert(
-                    menipis: dash.itemMenipis,
-                    habis:   dash.itemHabis,
-                    items:   dash.inventoryItems,
-                  )),
+                        menipis: dash.itemMenipis,
+                        habis: dash.itemHabis,
+                        items: dash.inventoryItems,
+                      )),
                   const SizedBox(height: 24),
 
                   _buildSectionHeader(
@@ -105,11 +109,11 @@ class DashboardView extends StatelessWidget {
                   const SizedBox(height: 14),
 
                   Obx(() => _buildFinanceSummary(
-                    penjualan:   dash.totalPenjualan,
-                    pengeluaran: dash.totalPengeluaran,
-                    profit:      dash.profitBersih,
-                    isFinal:     dash.isDataFinal,
-                  )),
+                        penjualan: dash.totalPenjualan,
+                        pengeluaran: dash.totalPengeluaran,
+                        profit: dash.profitBersih,
+                        isFinal: dash.isDataFinal,
+                      )),
                 ],
               ),
             ),
@@ -126,13 +130,14 @@ class DashboardView extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 38, height: 38,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 gradient: AppColors.brandGradient,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.4),
+                    color: AppColors.primary.withValues(alpha: 0.4),
                     blurRadius: 10,
                   ),
                 ],
@@ -146,17 +151,23 @@ class DashboardView extends StatelessWidget {
                 TextSpan(
                   text: 'Kitch',
                   style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16),
                 ),
                 TextSpan(
                   text: 'Flow',
                   style: TextStyle(
-                    color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 16),
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16),
                 ),
                 TextSpan(
                   text: ' AI',
                   style: TextStyle(
-                    color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16),
                 ),
               ]),
             ),
@@ -174,11 +185,13 @@ class DashboardView extends StatelessWidget {
               const Icon(Icons.notifications_none_rounded,
                   color: Colors.white, size: 22),
               Positioned(
-                top: 0, right: 0,
+                top: 0,
+                right: 0,
                 child: Container(
-                  width: 8, height: 8,
+                  width: 8,
+                  height: 8,
                   decoration: const BoxDecoration(
-                    color: Colors.red, shape: BoxShape.circle),
+                      color: Colors.red, shape: BoxShape.circle),
                 ),
               ),
             ],
@@ -191,8 +204,8 @@ class DashboardView extends StatelessWidget {
   Widget _buildProfitCard({
     required double keuntungan,
     required double stok,
-    required int    menuCount,
-    required bool   isConfirmed,
+    required int menuCount,
+    required bool isConfirmed,
   }) {
     final label = isConfirmed ? 'PROFIT TERKONFIRMASI' : 'ESTIMASI KEUNTUNGAN';
 
@@ -202,11 +215,12 @@ class DashboardView extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppColors.heroGradient,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
-            blurRadius: 30, offset: const Offset(0, 8),
+            color: AppColors.primary.withValues(alpha: 0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -218,20 +232,23 @@ class DashboardView extends StatelessWidget {
             children: [
               Text(label,
                   style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 11,
-                    letterSpacing: 1.2, fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w600,
                   )),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.15),
+                  color: Colors.green.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   isConfirmed
                       ? Icons.check_circle_rounded
                       : Icons.trending_up_rounded,
-                  color: Colors.green, size: 16,
+                  color: Colors.green,
+                  size: 16,
                 ),
               ),
             ],
@@ -240,22 +257,26 @@ class DashboardView extends StatelessWidget {
           Text(
             'Rp ${_fmt(keuntungan.toInt())}',
             style: const TextStyle(
-              color: Colors.white, fontSize: 34,
-              fontWeight: FontWeight.bold, letterSpacing: -1,
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -1,
             ),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.15),
+              color: Colors.green.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.withOpacity(0.3)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: Text(
               isConfirmed ? '✓ Produksi dikonfirmasi' : '↑ +12% dari kemarin',
               style: const TextStyle(
-                color: Colors.green, fontSize: 12, fontWeight: FontWeight.w600),
+                  color: Colors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 20),
@@ -294,9 +315,9 @@ class DashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -309,7 +330,7 @@ class DashboardView extends StatelessWidget {
                   style: const TextStyle(color: Colors.white38, fontSize: 10)),
               Text(value,
                   style: TextStyle(
-                    color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+                      color: color, fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
         ],
@@ -322,7 +343,7 @@ class DashboardView extends StatelessWidget {
     required int habis,
     required List<dynamic> items,
   }) {
-    final kritis      = items.where((e) => e.status == 'Habis').toList();
+    final kritis = items.where((e) => e.status == 'Habis').toList();
     final displayItem = kritis.isNotEmpty
         ? kritis.first
         : items.where((e) => e.status == 'Menipis').firstOrNull;
@@ -340,16 +361,16 @@ class DashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: alertColor.withOpacity(0.08),
+        color: alertColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: alertColor.withOpacity(0.3)),
+        border: Border.all(color: alertColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: alertColor.withOpacity(0.15),
+              color: alertColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -358,7 +379,8 @@ class DashboardView extends StatelessWidget {
                   : menipis > 0
                       ? Icons.warning_amber_rounded
                       : Icons.check_circle_outline_rounded,
-              color: alertColor, size: 20,
+              color: alertColor,
+              size: 20,
             ),
           ),
           const SizedBox(width: 14),
@@ -374,14 +396,15 @@ class DashboardView extends StatelessWidget {
                           : 'Stok Aman',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold, fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   stockText,
                   style: const TextStyle(
-                    color: Colors.white54, fontSize: 12, height: 1.4),
+                      color: Colors.white54, fontSize: 12, height: 1.4),
                 ),
               ],
             ),
@@ -394,8 +417,8 @@ class DashboardView extends StatelessWidget {
 
   Widget _buildSectionHeader({
     required String title,
-    String?   actionLabel,
-    Color     actionColor = AppColors.secondary,
+    String? actionLabel,
+    Color actionColor = AppColors.secondary,
     VoidCallback? onTap,
   }) {
     return Row(
@@ -403,20 +426,24 @@ class DashboardView extends StatelessWidget {
       children: [
         Text(title,
             style: const TextStyle(
-              color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold)),
         if (actionLabel != null)
           GestureDetector(
             onTap: onTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: actionColor.withOpacity(0.1),
+                color: actionColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: actionColor.withOpacity(0.3)),
+                border: Border.all(color: actionColor.withValues(alpha: 0.3)),
               ),
               child: Text(actionLabel,
                   style: TextStyle(
-                    color: actionColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                      color: actionColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
             ),
           ),
       ],
@@ -444,18 +471,18 @@ class DashboardView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 8,      // 🔽 10 → 8 (lebih kecil)
-        mainAxisSpacing: 8,       // 🔽 10 → 8 (lebih kecil)
-        childAspectRatio: 0.68,   // 🔽 0.72 → 0.68 (lebih pipih = lebih ringan)
+        crossAxisSpacing: 8, // 🔽 10 → 8 (lebih kecil)
+        mainAxisSpacing: 8, // 🔽 10 → 8 (lebih kecil)
+        childAspectRatio: 0.68, // 🔽 0.72 → 0.68 (lebih pipih = lebih ringan)
       ),
       itemCount: displayMenus.length,
       itemBuilder: (_, i) {
         final m = displayMenus[i];
         return MenuCard(
-          image:     m.imagePath,
-          title:     m.name,
+          image: m.imagePath,
+          title: m.name,
           soldLabel: '${m.targetPorsi} porsi',
-          badge:     'TOP ${m.rank}',
+          badge: 'TOP ${m.rank}',
           soldRatio: m.rekomendasiHarga > 0
               ? (m.hppPerPorsi / m.rekomendasiHarga).clamp(0.0, 1.0)
               : 0.5,
@@ -469,7 +496,7 @@ class DashboardView extends StatelessWidget {
     required double penjualan,
     required double pengeluaran,
     required double profit,
-    required bool   isFinal,
+    required bool isFinal,
   }) {
     return GlassCard(
       child: Column(
@@ -500,14 +527,15 @@ class DashboardView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withOpacity(0.2)),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 12),
+                  Icon(Icons.check_circle_rounded,
+                      color: Colors.green, size: 12),
                   SizedBox(width: 6),
                   Text('Data Produksi Terkonfirmasi',
                       style: TextStyle(color: Colors.green, fontSize: 11)),
@@ -528,7 +556,7 @@ class DashboardView extends StatelessWidget {
             style: const TextStyle(color: Colors.white54, fontSize: 13)),
         Text(value,
             style: TextStyle(
-              color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+                color: color, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }

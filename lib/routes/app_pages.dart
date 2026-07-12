@@ -66,6 +66,7 @@ class AppPages {
       bindings: [
         DashboardBinding(),
         InventoryBinding(),
+        HppBinding(),
         AiScanBinding(),
         AnalyticsBinding(),
         ProfilBinding(),

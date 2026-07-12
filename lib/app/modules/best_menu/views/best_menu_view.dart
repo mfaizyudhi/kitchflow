@@ -20,7 +20,7 @@ class _BestMenuViewState extends State<BestMenuView> {
   int _selectedFilter = 0;
   final List<String> _filters = ["Semua", "Terlaris", "Profit Tinggi", "Baru"];
 
-  // ── HELPER DEFAULT QTY ──────────────────────────────────────────────────
+  // ── HELPER DEFAULT QTY (dalam satuan DASAR: kg / liter / pcs, dst) ──────
   double _getDefaultQty(String bahanName) {
     final name = bahanName.toLowerCase();
     if (name.contains('ayam') || name.contains('daging') || name.contains('ikan')) {
@@ -39,6 +39,38 @@ class _BestMenuViewState extends State<BestMenuView> {
     return 0.1;
   }
 
+  // ── HELPER SATUAN TAMPILAN ───────────────────────────────────────────────
+  // Menentukan satuan yang ditampilkan ke user beserta faktor konversinya
+  // dari satuan dasar (yang disimpan di database & dipakai untuk kalkulasi
+  // HPP, contoh: kg atau liter) ke satuan yang lebih mudah diisi user
+  // (Gram atau ml). Untuk satuan yang sudah kecil/pas (pcs, butir, sdm,
+  // dll), tidak dikonversi sama sekali.
+  ({String label, double factor}) _unitDisplayInfo(String baseUnit) {
+    final u = baseUnit.trim().toLowerCase();
+    if (u == 'kg' || u == 'kilogram') {
+      return (label: 'Gram', factor: 1000.0);
+    }
+    if (u == 'liter' || u == 'l' || u == 'ltr') {
+      return (label: 'ml', factor: 1000.0);
+    }
+    // Satuan lain (pcs, butir, sdm, sdt, gram, ml, dll) dipakai apa adanya
+    return (label: baseUnit, factor: 1.0);
+  }
+
+  // Nilai default yang ditampilkan di TextField, dalam satuan tampilan
+  String _defaultDisplayQty(String bahanName, double factor) {
+    final baseQty = _getDefaultQty(bahanName);
+    final displayQty = baseQty * factor;
+    if (factor != 1.0) {
+      // Gram / ml → tampilkan sebagai bilangan bulat agar mudah dibaca
+      return displayQty.round().toString();
+    }
+    // Satuan asli (pcs, butir, dst) → tampilkan apa adanya
+    return displayQty == displayQty.roundToDouble()
+        ? displayQty.toInt().toString()
+        : displayQty.toString();
+  }
+
   // ── DIALOG TAMBAH MENU ─────────────────────────────────────────────────
   void _showTambahMenuDialog() {
     final invCtrl = InventoryController.to;
@@ -46,7 +78,7 @@ class _BestMenuViewState extends State<BestMenuView> {
     final namaCtrl = TextEditingController();
     final hargaCtrl = TextEditingController();
     final porsiCtrl = TextEditingController();
-    
+
     // Pakai List dan Map biasa (bukan Rx)
     final List<String> selectedBahan = [];
     final Map<String, TextEditingController> qtyControllers = {};
@@ -219,16 +251,20 @@ class _BestMenuViewState extends State<BestMenuView> {
                       ),
                     );
                   }
-                  
+
                   // Inisialisasi qty controller untuk bahan baru
+                  // (nilai default ditampilkan dalam satuan yang sesuai:
+                  // Gram untuk bahan berbasis kg, ml untuk bahan berbasis
+                  // liter, atau satuan aslinya untuk yang lain).
                   for (final bahan in stokInventory) {
                     if (!qtyControllers.containsKey(bahan.id)) {
+                      final unitInfo = _unitDisplayInfo(bahan.unit);
                       qtyControllers[bahan.id] = TextEditingController(
-                        text: _getDefaultQty(bahan.name).toString(),
+                        text: _defaultDisplayQty(bahan.name, unitInfo.factor),
                       );
                     }
                   }
-                  
+
                   return Container(
                     constraints: const BoxConstraints(maxHeight: 300),
                     decoration: BoxDecoration(
@@ -243,7 +279,8 @@ class _BestMenuViewState extends State<BestMenuView> {
                       itemBuilder: (context, i) {
                         final bahan = stokInventory[i];
                         final isSelected = selectedBahan.contains(bahan.id);
-                        
+                        final unitInfo = _unitDisplayInfo(bahan.unit);
+
                         return Column(
                           children: [
                             GestureDetector(
@@ -348,7 +385,7 @@ class _BestMenuViewState extends State<BestMenuView> {
                                               color: Colors.white24,
                                               fontSize: 10,
                                             ),
-                                            suffixText: bahan.unit,
+                                            suffixText: unitInfo.label,
                                             suffixStyle: const TextStyle(
                                               color: Colors.white38,
                                               fontSize: 10,
@@ -389,11 +426,15 @@ class _BestMenuViewState extends State<BestMenuView> {
                                       size: 12,
                                     ),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      'Contoh: 0.25 = 1/4 ${bahan.unit} per porsi',
-                                      style: const TextStyle(
-                                        color: Colors.white24,
-                                        fontSize: 10,
+                                    Expanded(
+                                      child: Text(
+                                        unitInfo.factor != 1.0
+                                            ? 'Kebutuhan per porsi dalam ${unitInfo.label} (otomatis dikonversi ke ${bahan.unit})'
+                                            : 'Kebutuhan per porsi dalam ${unitInfo.label}',
+                                        style: const TextStyle(
+                                          color: Colors.white24,
+                                          fontSize: 10,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -436,10 +477,11 @@ class _BestMenuViewState extends State<BestMenuView> {
                           spacing: 6,
                           runSpacing: 6,
                           children: selectedBahan.map((id) {
-                            final nama = InventoryController.to
-                                    .findById(id)
-                                    ?.name ??
-                                id;
+                            final bahanRef = InventoryController.to.findById(id);
+                            final nama = bahanRef?.name ?? id;
+                            final unitLabel = bahanRef != null
+                                ? _unitDisplayInfo(bahanRef.unit).label
+                                : '';
                             final qty = qtyControllers[id]?.text ?? '0';
                             return Container(
                               padding: const EdgeInsets.symmetric(
@@ -457,7 +499,7 @@ class _BestMenuViewState extends State<BestMenuView> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    '$nama ($qty)',
+                                    '$nama ($qty $unitLabel)',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -530,16 +572,23 @@ class _BestMenuViewState extends State<BestMenuView> {
                           return;
                         }
 
-                        // KUMPULKAN QTY
+                        // KUMPULKAN QTY — dikonversi balik ke satuan DASAR
+                        // (kg/liter) sesuai satuan asli tiap bahan, karena
+                        // qty_needed di database dan kalkulasi HPP memakai
+                        // satuan dasar tersebut.
                         final List<double> qtyList = [];
                         for (final id in selectedBahan) {
                           final controller = qtyControllers[id];
-                          if (controller != null) {
-                            final qty = double.tryParse(controller.text) ?? 0.1;
-                            qtyList.add(qty);
-                          } else {
-                            qtyList.add(0.1);
-                          }
+                          final bahanRef = InventoryController.to.findById(id);
+                          final factor = bahanRef != null
+                              ? _unitDisplayInfo(bahanRef.unit).factor
+                              : 1.0;
+
+                          final displayValue = controller != null
+                              ? double.tryParse(controller.text) ?? (0.1 * factor)
+                              : 0.1 * factor;
+
+                          qtyList.add(displayValue / factor);
                         }
 
                         await menuCtrl.addMenu(
@@ -1068,110 +1117,7 @@ class _BestMenuViewState extends State<BestMenuView> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
-
-          // ── DIVIDER ──────────────────────────────────
-          const Divider(color: Colors.white10, height: 1),
-
-          // ── TOMBOL BAWAH ─────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      menuCtrl.setActiveMenu(menu);
-                      HppController.to.resetHpp();
-                      Get.toNamed(Routes.HPP);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.brandGradient,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calculate_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            "Hitung HPP",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: menu.hppPerPorsi > 0
-                        ? () {
-                            menuCtrl.setActiveMenu(menu);
-                            ProductionController.to.syncTargetPorsi();
-                            Get.toNamed(Routes.PRODUCTION);
-                          }
-                        : null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: menu.hppPerPorsi > 0
-                            ? Colors.green.withOpacity(0.12)
-                            : Colors.white.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: menu.hppPerPorsi > 0
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.white10,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.restaurant_rounded,
-                            color: menu.hppPerPorsi > 0
-                                ? Colors.green
-                                : Colors.white24,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "Produksi",
-                            style: TextStyle(
-                              color: menu.hppPerPorsi > 0
-                                  ? Colors.green
-                                  : Colors.white24,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );

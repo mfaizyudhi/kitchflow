@@ -104,7 +104,7 @@ class BestMenuController extends GetxController {
     required int targetPorsi,
     required List<String> inventoryItemIds,
     required List<double> qtyNeededList, // 🔥 PARAMETER BARU
-    String imagePath = 'assets/images/food_ai.jpg',
+    String imagePath = 'assets/images/logomakanan.jpg',
     String level = 'Populer',
   }) async {
     final rank = menus.length + 1;

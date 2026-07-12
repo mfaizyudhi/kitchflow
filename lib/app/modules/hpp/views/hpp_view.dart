@@ -10,7 +10,8 @@ import '../../best_menu/controllers/best_menu_controller.dart';
 import '../../inventory/controllers/inventory_controller.dart';
 
 class HppView extends StatefulWidget {
-  const HppView({super.key});
+  final bool showBackButton;
+  const HppView({super.key, this.showBackButton = true});
 
   @override
   State<HppView> createState() => _HppViewState();
@@ -24,7 +25,9 @@ class _HppViewState extends State<HppView> {
 
   @override
   void dispose() {
-    for (final c in _hargaPasarControllers.values) c.dispose();
+    for (final c in _hargaPasarControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -60,10 +63,11 @@ class _HppViewState extends State<HppView> {
     });
 
     final Map<String, double> hasil = {};
+    final kota = hppCtrl.namaKotaEfektif;
+
     for (final item in items) {
-      await Future.delayed(const Duration(milliseconds: 400));
-      // Simulasi harga lokal (85% dari harga nasional)
-      hasil[item.id] = item.pricePerUnit * 0.85;
+      final harga = await hppCtrl.fetchHargaLokasi(kota, item.name, item.id);
+      hasil[item.id] = harga;
       setState(() => _itemLoaded[item.id] = true);
     }
 
@@ -75,7 +79,7 @@ class _HppViewState extends State<HppView> {
     Get.snackbar(
       "Berhasil",
       "Harga lokal berhasil dimuat untuk ${items.length} bahan",
-      backgroundColor: Colors.green.withOpacity(0.8),
+      backgroundColor: Colors.green.withValues(alpha: 0.8),
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
     );
@@ -85,9 +89,6 @@ class _HppViewState extends State<HppView> {
     final hppCtrl = HppController.to;
     final menuCtrl = BestMenuController.to;
     final invCtrl = InventoryController.to;
-
-    final bahanIds = _bahanIds(menuCtrl);
-    final items = invCtrl.items.where((i) => bahanIds.contains(i.id)).toList();
 
     // Validasi input
     bool hasError = false;
@@ -104,7 +105,7 @@ class _HppViewState extends State<HppView> {
       Get.snackbar(
         "Input Tidak Valid",
         "Pastikan semua harga pasar diisi dengan angka positif",
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP,
       );
@@ -116,7 +117,7 @@ class _HppViewState extends State<HppView> {
     Get.snackbar(
       "Berhasil",
       "HPP dengan harga pasar berhasil dihitung",
-      backgroundColor: Colors.orange.withOpacity(0.8),
+      backgroundColor: Colors.orange.withValues(alpha: 0.8),
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
     );
@@ -144,7 +145,7 @@ class _HppViewState extends State<HppView> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.2),
+                    AppColors.primary.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -161,7 +162,7 @@ class _HppViewState extends State<HppView> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.secondary.withOpacity(0.1),
+                    AppColors.secondary.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -177,23 +178,25 @@ class _HppViewState extends State<HppView> {
                   // ── HEADER ──────────────────────────────────────
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Get.back(),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.card,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white10),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white,
-                            size: 18,
+                      if (widget.showBackButton) ...[
+                        GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 14),
+                        const SizedBox(width: 14),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,11 +253,11 @@ class _HppViewState extends State<HppView> {
                         ),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.secondary.withOpacity(0.3),
+                          color: AppColors.secondary.withValues(alpha: 0.3),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.secondary.withOpacity(0.1),
+                            color: AppColors.secondary.withValues(alpha: 0.1),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -267,7 +270,8 @@ class _HppViewState extends State<HppView> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.secondary.withOpacity(0.15),
+                                  color: AppColors.secondary
+                                      .withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
@@ -307,10 +311,12 @@ class _HppViewState extends State<HppView> {
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.secondary.withOpacity(0.12),
+                                    color: AppColors.secondary
+                                        .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: AppColors.secondary.withOpacity(0.3),
+                                      color: AppColors.secondary
+                                          .withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: isLoading
@@ -358,7 +364,7 @@ class _HppViewState extends State<HppView> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.12),
+                                    color: Colors.green.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Text(
@@ -371,6 +377,93 @@ class _HppViewState extends State<HppView> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ],
+                          if (hppCtrl.isLocationFallbackActive.value) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.orange.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.orange,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "Lokasi tidak terdeteksi, memakai harga rata-rata nasional",
+                                      style: TextStyle(
+                                        color: Colors.orange,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            // Tampilkan info jika lokasi terdeteksi tapi di luar Jawa Tengah (karena database scraper hanya Jateng)
+                            Builder(
+                              builder: (context) {
+                                final namaWilayah = wilayah.toLowerCase();
+                                final isLuarJateng = namaWilayah.isNotEmpty &&
+                                    !namaWilayah.contains('mendeteksi') &&
+                                    !namaWilayah.contains('tidak aktif') &&
+                                    !namaWilayah.contains('ditolak') &&
+                                    !namaWilayah.contains('gagal') &&
+                                    !namaWilayah.contains('jawa tengah') &&
+                                    !namaWilayah.contains('jateng') &&
+                                    !hppCtrl.isOverrideActive.value;
+
+                                if (!isLuarJateng)
+                                  return const SizedBox.shrink();
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.blue.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color:
+                                            Colors.blue.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.info_outline_rounded,
+                                          color: Colors.blue,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            "Lokasi terdeteksi di luar Jawa Tengah. Karena data scraper saat ini hanya mencakup wilayah Jawa Tengah, harga lokal otomatis menggunakan tingkat Nasional. Silakan gunakan opsi 'Override Lokasi' di bawah untuk mensimulasikan wilayah Jawa Tengah.",
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                           const SizedBox(height: 14),
@@ -386,12 +479,13 @@ class _HppViewState extends State<HppView> {
                                     ? null
                                     : AppColors.brandGradient,
                                 color: _hargaLoaded
-                                    ? Colors.green.withOpacity(0.12)
+                                    ? Colors.green.withValues(alpha: 0.12)
                                     : null,
                                 borderRadius: BorderRadius.circular(12),
                                 border: _hargaLoaded
                                     ? Border.all(
-                                        color: Colors.green.withOpacity(0.3),
+                                        color:
+                                            Colors.green.withValues(alpha: 0.3),
                                       )
                                     : null,
                               ),
@@ -411,7 +505,7 @@ class _HppViewState extends State<HppView> {
                                   Flexible(
                                     child: Text(
                                       _hargaLoaded
-                                          ? "Harga Lokal ${wilayah.split(',').first} Dimuat"
+                                          ? "Harga Lokal ${hppCtrl.namaKotaEfektif} Dimuat"
                                           : "Ambil Harga Bahan dari Lokasi",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -429,11 +523,162 @@ class _HppViewState extends State<HppView> {
                               ),
                             ),
                           ),
+                          // Override Lokasi (Debug Mode)
+                          const SizedBox(height: 12),
+                          const Divider(color: Colors.white10, height: 1),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Override Lokasi (Debug)",
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Switch(
+                                value: hppCtrl.isOverrideActive.value,
+                                onChanged: (val) {
+                                  hppCtrl.isOverrideActive.value = val;
+                                  if (!val) {
+                                    hppCtrl.overrideKota.value = '';
+                                  } else {
+                                    hppCtrl.overrideKota.value = 'Kota Tegal';
+                                  }
+                                },
+                                activeColor: AppColors.secondary,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ],
+                          ),
+                          if (hppCtrl.isOverrideActive.value) ...[
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: hppCtrl.overrideKotaController,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText:
+                                    "Masukkan nama kota (cth: Kota Tegal)",
+                                hintStyle:
+                                    const TextStyle(color: Colors.white30),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.05),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                    color: AppColors.secondary
+                                        .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      const BorderSide(color: Colors.white10),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.secondary),
+                                ),
+                              ),
+                              onChanged: (val) {
+                                hppCtrl.overrideKota.value = val;
+                              },
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              "* Catatan: Database API saat ini hanya mencakup wilayah Jawa Tengah (Jateng). Masukkan Kota/Kabupaten di Jateng (cth: Semarang, Surakarta) atau ketik 'Jawa Tengah' untuk data tingkat provinsi.",
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 10,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     );
                   }),
                   const SizedBox(height: 20),
+
+                  // ── PILIH MENU DROPDOWN ──────────────────────────
+                  Obx(() {
+                    final activeM = menuCtrl.activeMenu.value;
+                    final allMenus = menuCtrl.menus;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Pilih Menu Kuliner",
+                            style:
+                                TextStyle(color: Colors.white54, fontSize: 11),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<MenuItem>(
+                                value: allMenus.firstWhereOrNull(
+                                    (m) => m.id == activeM?.id),
+                                dropdownColor: AppColors.card,
+                                isExpanded: true,
+                                hint: const Text(
+                                  "Pilih menu...",
+                                  style: TextStyle(
+                                      color: Colors.white30, fontSize: 14),
+                                ),
+                                icon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: AppColors.textSecondary,
+                                ),
+                                items: allMenus.map((m) {
+                                  return DropdownMenuItem<MenuItem>(
+                                    value: m,
+                                    child: Text(
+                                      m.name,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (selected) {
+                                  if (selected != null) {
+                                    menuCtrl.setActiveMenu(selected);
+                                    hppCtrl.resetHpp();
+                                    setState(() {
+                                      _hargaLoaded = false;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 10),
 
                   // ── MENU AKTIF ────────────────────────────────────
                   Obx(() {
@@ -445,7 +690,7 @@ class _HppViewState extends State<HppView> {
                           color: AppColors.card,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.red.withOpacity(0.3),
+                            color: Colors.red.withValues(alpha: 0.3),
                           ),
                         ),
                         child: const Center(
@@ -470,7 +715,7 @@ class _HppViewState extends State<HppView> {
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -486,7 +731,8 @@ class _HppViewState extends State<HppView> {
                                 width: 72,
                                 height: 72,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Icon(
@@ -559,7 +805,8 @@ class _HppViewState extends State<HppView> {
                               onTap: () => hppCtrl.gantiMode(SumberHarga.lokal),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 250),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   gradient: mode == SumberHarga.lokal
                                       ? AppColors.brandGradient
@@ -607,7 +854,8 @@ class _HppViewState extends State<HppView> {
                               onTap: () => hppCtrl.gantiMode(SumberHarga.pasar),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 250),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
                                   gradient: mode == SumberHarga.pasar
                                       ? const LinearGradient(
@@ -706,10 +954,11 @@ class _HppViewState extends State<HppView> {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.primary.withOpacity(0.2),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: Text(
@@ -724,7 +973,6 @@ class _HppViewState extends State<HppView> {
                           ],
                         ),
                         const SizedBox(height: 14),
-
                         if (items.isEmpty)
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -732,7 +980,7 @@ class _HppViewState extends State<HppView> {
                               color: AppColors.card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.orange.withOpacity(0.2),
+                                color: Colors.orange.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Row(
@@ -761,12 +1009,15 @@ class _HppViewState extends State<HppView> {
                             final ing = m.ingredients.firstWhereOrNull(
                               (i) => i.inventoryItemId == item.id,
                             );
-                            final qtyNeeded = (ing?.qtyNeeded ?? 1) * m.targetPorsi;
+                            final qtyNeeded =
+                                (ing?.qtyNeeded ?? 1) * m.targetPorsi;
                             final isLoaded = _itemLoaded[item.id] == true;
 
                             // Harga yang ditampilkan sesuai mode
                             final hargaLokal =
-                                _hargaWilayah[item.id] ?? item.pricePerUnit * 0.85;
+                                _hargaWilayah[item.id] ?? item.pricePerUnit;
+                            final level =
+                                hppCtrl.sumberLevels[item.id] ?? 'nasional';
                             final hargaPasar =
                                 hppCtrl.hargaPasarManual[item.id] ??
                                     item.pricePerUnit * 0.9;
@@ -783,9 +1034,9 @@ class _HppViewState extends State<HppView> {
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
                                   color: isLoaded && mode == SumberHarga.lokal
-                                      ? Colors.green.withOpacity(0.2)
+                                      ? Colors.green.withValues(alpha: 0.2)
                                       : mode == SumberHarga.pasar
-                                          ? Colors.orange.withOpacity(0.2)
+                                          ? Colors.orange.withValues(alpha: 0.2)
                                           : Colors.white10,
                                 ),
                               ),
@@ -800,7 +1051,7 @@ class _HppViewState extends State<HppView> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -869,7 +1120,8 @@ class _HppViewState extends State<HppView> {
                                     ],
                                   ),
                                   // Perbandingan harga lokal vs nasional (mode lokal)
-                                  if (mode == SumberHarga.lokal && isLoaded) ...[
+                                  if (mode == SumberHarga.lokal &&
+                                      isLoaded) ...[
                                     const SizedBox(height: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -877,7 +1129,8 @@ class _HppViewState extends State<HppView> {
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.06),
+                                        color: Colors.green
+                                            .withValues(alpha: 0.06),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -886,15 +1139,13 @@ class _HppViewState extends State<HppView> {
                                             child: Text(
                                               "Nasional: Rp ${_fmt(item.pricePerUnit.toInt())}",
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.white38,
                                                 fontSize: 10,
-                                                decoration: TextDecoration
-                                                    .lineThrough,
-                                                decorationColor:
-                                                    Colors.white38,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
+                                                decorationColor: Colors.white38,
                                               ),
                                             ),
                                           ),
@@ -909,8 +1160,7 @@ class _HppViewState extends State<HppView> {
                                             child: Text(
                                               "Lokal: Rp ${_fmt(hargaLokal.toInt())}",
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 10,
@@ -926,18 +1176,62 @@ class _HppViewState extends State<HppView> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: Colors.green
-                                                  .withOpacity(0.12),
+                                                  .withValues(alpha: 0.12),
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
                                             child: Text(
                                               "Hemat ${_fmt((item.pricePerUnit - hargaLokal).toInt())}",
                                               maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: level == 'kota'
+                                                  ? Colors.blue
+                                                      .withValues(alpha: 0.15)
+                                                  : level == 'provinsi'
+                                                      ? Colors.purple
+                                                          .withValues(
+                                                              alpha: 0.15)
+                                                      : Colors.grey.withValues(
+                                                          alpha: 0.15),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              border: Border.all(
+                                                color: level == 'kota'
+                                                    ? Colors.blue
+                                                        .withValues(alpha: 0.3)
+                                                    : level == 'provinsi'
+                                                        ? Colors.purple
+                                                            .withValues(
+                                                                alpha: 0.3)
+                                                        : Colors.grey
+                                                            .withValues(
+                                                                alpha: 0.3),
+                                                width: 0.5,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              level.toUpperCase(),
+                                              style: TextStyle(
+                                                color: level == 'kota'
+                                                    ? Colors.blue
+                                                    : level == 'provinsi'
+                                                        ? Colors.purpleAccent
+                                                        : Colors.grey,
+                                                fontSize: 8,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -973,8 +1267,7 @@ class _HppViewState extends State<HppView> {
                                               color: Colors.white,
                                               fontSize: 13,
                                             ),
-                                            keyboardType:
-                                                TextInputType.number,
+                                            keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
                                               hintText: "Rp / ${item.unit}",
                                               hintStyle: const TextStyle(
@@ -1043,7 +1336,7 @@ class _HppViewState extends State<HppView> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.green.withOpacity(0.3),
+                                color: Colors.green.withValues(alpha: 0.3),
                                 blurRadius: 10,
                               ),
                             ],
@@ -1088,10 +1381,10 @@ class _HppViewState extends State<HppView> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.06),
+                              color: Colors.green.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: Colors.green.withOpacity(0.2),
+                                color: Colors.green.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Row(
@@ -1100,7 +1393,7 @@ class _HppViewState extends State<HppView> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.12),
+                                    color: Colors.green.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
@@ -1194,7 +1487,7 @@ class _HppViewState extends State<HppView> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: modeColor.withOpacity(0.12),
+                                  color: modeColor.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -1221,7 +1514,7 @@ class _HppViewState extends State<HppView> {
                                     Text(
                                       modeLabel,
                                       style: TextStyle(
-                                        color: modeColor.withOpacity(0.8),
+                                        color: modeColor.withValues(alpha: 0.8),
                                         fontSize: 10,
                                       ),
                                       maxLines: 1,
@@ -1237,10 +1530,10 @@ class _HppViewState extends State<HppView> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: modeColor.withOpacity(0.12),
+                                  color: modeColor.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: modeColor.withOpacity(0.3),
+                                    color: modeColor.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
@@ -1259,7 +1552,6 @@ class _HppViewState extends State<HppView> {
                           const SizedBox(height: 16),
                           const Divider(color: Colors.white10),
                           const SizedBox(height: 16),
-
                           if (isLoading)
                             const Center(
                               child: Padding(
@@ -1370,7 +1662,7 @@ class _HppViewState extends State<HppView> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.04),
+                                  color: Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: Colors.white10),
                                 ),
@@ -1416,10 +1708,10 @@ class _HppViewState extends State<HppView> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: modeColor.withOpacity(0.08),
+                                color: modeColor.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: modeColor.withOpacity(0.2),
+                                  color: modeColor.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: Row(
@@ -1431,7 +1723,8 @@ class _HppViewState extends State<HppView> {
                                       Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: modeColor.withOpacity(0.15),
+                                          color:
+                                              modeColor.withValues(alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -1487,10 +1780,10 @@ class _HppViewState extends State<HppView> {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.06),
+                        color: AppColors.secondary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColors.secondary.withOpacity(0.2),
+                          color: AppColors.secondary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -1536,7 +1829,8 @@ class _HppViewState extends State<HppView> {
                         boxShadow: sudah
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.4),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.4),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -1572,9 +1866,8 @@ class _HppViewState extends State<HppView> {
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: sudah
-                                          ? Colors.white
-                                          : Colors.white38,
+                                      color:
+                                          sudah ? Colors.white : Colors.white38,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1596,13 +1889,14 @@ class _HppViewState extends State<HppView> {
     );
   }
 
-  Widget _compareCard(String label, double hpp, double rekomendasi, Color color) {
+  Widget _compareCard(
+      String label, double hpp, double rekomendasi, Color color) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

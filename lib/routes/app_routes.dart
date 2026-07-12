@@ -18,7 +18,7 @@ abstract class Routes {
   // tapi tetap didefinisikan untuk binding
   static const DASHBOARD = '/dashboard';
   static const INVENTORY = '/inventory';
-  static const AI_SCAN = '/ai_scan';
+  static const AI_SCAN = '/hpp';
   static const BEST_MENU = '/best-menu';
   static const TAMBAH_BAHAN = '/tambah-bahan';
 }

@@ -49,6 +49,8 @@ dependencies:
   google_mlkit_face_detection: ^0.11.0  # ← TAMBAH
   camera: ^0.11.0                        # ← TAMBAH
   shared_preferences: ^2.3.0 
+  permission_handler: ^11.3.1
+  intl: ^0.20.2
   
   
 

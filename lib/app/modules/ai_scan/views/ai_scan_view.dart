@@ -3,7 +3,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/ai_result_card.dart';
 import '../../../../core/widgets/recommendation_card.dart';
 
-
 class AiScanView extends StatefulWidget {
   const AiScanView({super.key});
 
@@ -14,6 +13,14 @@ class AiScanView extends StatefulWidget {
 class _AiScanViewState extends State<AiScanView> {
   bool _hasScanned = false;
   bool _isScanning = false;
+  final TextEditingController _menuInputController =
+      TextEditingController(text: "Orek Tempe");
+
+  @override
+  void dispose() {
+    _menuInputController.dispose();
+    super.dispose();
+  }
 
   void _startScan() async {
     setState(() => _isScanning = true);
@@ -32,15 +39,15 @@ class _AiScanViewState extends State<AiScanView> {
       "porsi": "4 Porsi",
       "waktu": "20 Menit",
       "bahan": [
-        {"nama": "Tempe",        "jumlah": "250 gr"},
-        {"nama": "Cabe Merah",   "jumlah": "5 buah"},
-        {"nama": "Cabe Rawit",   "jumlah": "3 buah"},
+        {"nama": "Tempe", "jumlah": "250 gr"},
+        {"nama": "Cabe Merah", "jumlah": "5 buah"},
+        {"nama": "Cabe Rawit", "jumlah": "3 buah"},
         {"nama": "Bawang Putih", "jumlah": "3 siung"},
         {"nama": "Bawang Merah", "jumlah": "4 siung"},
-        {"nama": "Kecap Manis",  "jumlah": "2 sdm"},
-        {"nama": "Gula Merah",   "jumlah": "1 sdm"},
-        {"nama": "Garam",        "jumlah": "secukupnya"},
-        {"nama": "Minyak Goreng","jumlah": "3 sdm"},
+        {"nama": "Kecap Manis", "jumlah": "2 sdm"},
+        {"nama": "Gula Merah", "jumlah": "1 sdm"},
+        {"nama": "Garam", "jumlah": "secukupnya"},
+        {"nama": "Minyak Goreng", "jumlah": "3 sdm"},
       ],
       "langkah": [
         {
@@ -64,8 +71,7 @@ class _AiScanViewState extends State<AiScanView> {
         {
           "no": "4",
           "judul": "Masukkan Tempe",
-          "detail":
-              "Masukkan tempe goreng ke dalam tumisan bumbu. Aduk rata.",
+          "detail": "Masukkan tempe goreng ke dalam tumisan bumbu. Aduk rata.",
         },
         {
           "no": "5",
@@ -86,16 +92,16 @@ class _AiScanViewState extends State<AiScanView> {
       "porsi": "4 Porsi",
       "waktu": "25 Menit",
       "bahan": [
-        {"nama": "Tempe",        "jumlah": "300 gr"},
-        {"nama": "Cabe Merah",   "jumlah": "6 buah"},
-        {"nama": "Cabe Rawit",   "jumlah": "5 buah"},
+        {"nama": "Tempe", "jumlah": "300 gr"},
+        {"nama": "Cabe Merah", "jumlah": "6 buah"},
+        {"nama": "Cabe Rawit", "jumlah": "5 buah"},
         {"nama": "Bawang Merah", "jumlah": "6 siung"},
         {"nama": "Bawang Putih", "jumlah": "4 siung"},
-        {"nama": "Tomat",        "jumlah": "1 buah"},
-        {"nama": "Daun Salam",   "jumlah": "2 lembar"},
-        {"nama": "Garam",        "jumlah": "secukupnya"},
-        {"nama": "Gula",         "jumlah": "1 sdt"},
-        {"nama": "Minyak Goreng","jumlah": "4 sdm"},
+        {"nama": "Tomat", "jumlah": "1 buah"},
+        {"nama": "Daun Salam", "jumlah": "2 lembar"},
+        {"nama": "Garam", "jumlah": "secukupnya"},
+        {"nama": "Gula", "jumlah": "1 sdt"},
+        {"nama": "Minyak Goreng", "jumlah": "4 sdm"},
       ],
       "langkah": [
         {
@@ -156,13 +162,13 @@ class _AiScanViewState extends State<AiScanView> {
         expand: false,
         builder: (context, scrollController) => Column(
           children: [
-
             // ── HANDLE ────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.only(top: 14, bottom: 4),
               child: Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(2),
@@ -178,7 +184,6 @@ class _AiScanViewState extends State<AiScanView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     // ── GAMBAR MENU ──────────────────────────
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
@@ -263,13 +268,14 @@ class _AiScanViewState extends State<AiScanView> {
                                 border: isLast
                                     ? null
                                     : const Border(
-                                        bottom: BorderSide(
-                                            color: Colors.white10)),
+                                        bottom:
+                                            BorderSide(color: Colors.white10)),
                               ),
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 6, height: 6,
+                                    width: 6,
+                                    height: 6,
                                     decoration: BoxDecoration(
                                       color: AppColors.secondary,
                                       shape: BoxShape.circle,
@@ -290,12 +296,11 @@ class _AiScanViewState extends State<AiScanView> {
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: AppColors.secondary
-                                          .withOpacity(0.1),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
                                           color: AppColors.secondary
-                                              .withOpacity(0.25)),
+                                              .withValues(alpha: 0.25)),
                                     ),
                                     child: Text(
                                       bahan["jumlah"],
@@ -335,19 +340,19 @@ class _AiScanViewState extends State<AiScanView> {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-
                               // NOMOR + LINE
                               Column(
                                 children: [
                                   Container(
-                                    width: 32, height: 32,
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       gradient: AppColors.brandGradient,
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
                                           color: AppColors.primary
-                                              .withOpacity(0.4),
+                                              .withValues(alpha: 0.4),
                                           blurRadius: 8,
                                         ),
                                       ],
@@ -371,8 +376,7 @@ class _AiScanViewState extends State<AiScanView> {
                                           vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.white10,
-                                        borderRadius:
-                                            BorderRadius.circular(2),
+                                        borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
                                 ],
@@ -383,8 +387,8 @@ class _AiScanViewState extends State<AiScanView> {
                               // KONTEN LANGKAH
                               Expanded(
                                 child: Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: isLast ? 0 : 16),
+                                  padding:
+                                      EdgeInsets.only(bottom: isLast ? 0 : 16),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -428,7 +432,7 @@ class _AiScanViewState extends State<AiScanView> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: AppColors.primary.withValues(alpha: 0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -476,7 +480,7 @@ class _AiScanViewState extends State<AiScanView> {
         Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 15),
@@ -498,9 +502,9 @@ class _AiScanViewState extends State<AiScanView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -527,7 +531,6 @@ class _AiScanViewState extends State<AiScanView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-
           /// GLOW TOP
           Positioned(
             top: -80,
@@ -539,7 +542,7 @@ class _AiScanViewState extends State<AiScanView> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.2),
+                    AppColors.primary.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -553,13 +556,12 @@ class _AiScanViewState extends State<AiScanView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   // ── HEADER ─────────────────────────────────────
                   RichText(
                     text: const TextSpan(
                       children: [
                         TextSpan(
-                          text: "AI Scan ",
+                          text: "AI Visual ",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 28,
@@ -568,7 +570,7 @@ class _AiScanViewState extends State<AiScanView> {
                           ),
                         ),
                         TextSpan(
-                          text: "Bahan",
+                          text: "Menu Generator",
                           style: TextStyle(
                             color: AppColors.secondary,
                             fontSize: 28,
@@ -583,7 +585,7 @@ class _AiScanViewState extends State<AiScanView> {
                   const SizedBox(height: 6),
 
                   const Text(
-                    "Scan bahan makanan untuk rekomendasi menu AI",
+                    "Tulis ide menu makanan untuk memvisualisasikan dengan AI",
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
@@ -593,7 +595,7 @@ class _AiScanViewState extends State<AiScanView> {
 
                   const SizedBox(height: 20),
 
-                  // ── CAMERA CARD ────────────────────────────────
+                  // ── CAMERA CARD (AI VISUAL DISPLAY) ────────────
                   Container(
                     height: 280,
                     width: double.infinity,
@@ -602,14 +604,14 @@ class _AiScanViewState extends State<AiScanView> {
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: _hasScanned
-                            ? AppColors.primary.withOpacity(0.4)
+                            ? AppColors.primary.withValues(alpha: 0.4)
                             : Colors.white10,
                         width: _hasScanned ? 1.5 : 1,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: _hasScanned
-                              ? AppColors.primary.withOpacity(0.15)
+                              ? AppColors.primary.withValues(alpha: 0.15)
                               : Colors.transparent,
                           blurRadius: 20,
                         ),
@@ -624,29 +626,96 @@ class _AiScanViewState extends State<AiScanView> {
 
                   const SizedBox(height: 16),
 
-                  // ── PILIHAN UPLOAD ─────────────────────────────
-                  Row(
+                  // ── INPUT TEXT USER & GENERATE BUTTON ───────────
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _uploadOption(
-                          icon: Icons.camera_alt_rounded,
-                          label: "Kamera",
-                          onTap: _startScan,
+                      const Text(
+                        "Nama Menu / Bahan",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _uploadOption(
-                          icon: Icons.photo_library_rounded,
-                          label: "Galeri",
-                          onTap: _startScan,
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _menuInputController,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText:
+                              "Masukkan nama menu (cth: Orek Tempe, Nasi Goreng)",
+                          hintStyle: const TextStyle(
+                              color: AppColors.textHint, fontSize: 13),
+                          prefixIcon: const Icon(
+                            Icons.restaurant_menu_rounded,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.card,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Colors.white10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Colors.white10),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: AppColors.secondary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.brandGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.4),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: _startScan,
+                            child: const Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.auto_awesome,
+                                      color: Colors.white, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "Generate Visual Menu",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
 
                   if (_hasScanned) ...[
-
                     const SizedBox(height: 24),
 
                     // ── HASIL ANALISIS ─────────────────────────
@@ -655,7 +724,7 @@ class _AiScanViewState extends State<AiScanView> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withOpacity(0.12),
+                            color: AppColors.secondary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -681,8 +750,7 @@ class _AiScanViewState extends State<AiScanView> {
                     AiResultCard(
                       title: "Bahan Terdeteksi",
                       confidence: "98%",
-                      recommendation:
-                          "Tempe, Cabe Merah, Bawang merah",
+                      recommendation: "Tempe, Cabe Merah, Bawang merah",
                       icon: Icons.document_scanner_rounded,
                     ),
 
@@ -691,8 +759,7 @@ class _AiScanViewState extends State<AiScanView> {
                     AiResultCard(
                       title: "Cek Ketersediaan Stok",
                       confidence: "Sinkron",
-                      recommendation:
-                          "Semua bahan tersedia di inventory",
+                      recommendation: "Semua bahan tersedia di inventory",
                       icon: Icons.inventory_2_outlined,
                     ),
 
@@ -704,7 +771,7 @@ class _AiScanViewState extends State<AiScanView> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
+                            color: AppColors.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -733,8 +800,7 @@ class _AiScanViewState extends State<AiScanView> {
                       profit: "Rp 350.000",
                       hpp: "Rp 8.500",
                       level: "Tinggi",
-                      onGunakanMenu: () =>
-                          _showResepBottomSheet("Orek Tempe"),
+                      onGunakanMenu: () => _showResepBottomSheet("Orek Tempe"),
                     ),
 
                     RecommendationCard(
@@ -767,21 +833,21 @@ class _AiScanViewState extends State<AiScanView> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primary.withOpacity(0.2),
-                AppColors.secondary.withOpacity(0.1),
+                AppColors.primary.withValues(alpha: 0.2),
+                AppColors.secondary.withValues(alpha: 0.1),
               ],
             ),
             shape: BoxShape.circle,
           ),
           child: const Icon(
-            Icons.camera_alt_rounded,
+            Icons.auto_awesome,
             size: 48,
             color: AppColors.secondary,
           ),
         ),
         const SizedBox(height: 20),
         const Text(
-          "Scan Bahan Makanan",
+          "Visualisasikan Menu Anda",
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -790,7 +856,7 @@ class _AiScanViewState extends State<AiScanView> {
         ),
         const SizedBox(height: 8),
         const Text(
-          "AI akan mendeteksi bahan secara\notomatis dan memberi rekomendasi",
+          "Masukkan ide masakan untuk menghasilkan\nvisualisasi hidangan dengan AI",
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppColors.textSecondary,
@@ -812,7 +878,7 @@ class _AiScanViewState extends State<AiScanView> {
         ),
         const SizedBox(height: 20),
         const Text(
-          "AI sedang menganalisis...",
+          "AI sedang memproses...",
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -821,7 +887,7 @@ class _AiScanViewState extends State<AiScanView> {
         ),
         const SizedBox(height: 8),
         const Text(
-          "Mendeteksi bahan makanan",
+          "Menghasilkan visualisasi menu",
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: 13,
@@ -832,15 +898,34 @@ class _AiScanViewState extends State<AiScanView> {
   }
 
   Widget _buildScannedState() {
+    String namaMenu = _menuInputController.text.trim();
+    if (namaMenu.isEmpty) {
+      namaMenu = "Orek Tempe";
+    }
+    String stylePrompt =
+        "highly detailed food photography, 4k resolution, cinematic lighting, appetizing";
+    String aiUrl =
+        "https://image.pollinations.ai/prompt/${Uri.encodeComponent('$namaMenu, $stylePrompt')}";
+
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          child: Image.asset(
-            "assets/images/scanai.jpg",
+          child: SizedBox(
             width: double.infinity,
             height: double.infinity,
-            fit: BoxFit.cover,
+            child: Image.network(
+              aiUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.secondary,
+                  ),
+                );
+              },
+            ),
           ),
         ),
 
@@ -851,7 +936,7 @@ class _AiScanViewState extends State<AiScanView> {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                Colors.black.withOpacity(0.6),
+                Colors.black.withValues(alpha: 0.6),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -869,7 +954,7 @@ class _AiScanViewState extends State<AiScanView> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.9),
+                  color: Colors.green.withValues(alpha: 0.9),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -879,10 +964,10 @@ class _AiScanViewState extends State<AiScanView> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "3 bahan terdeteksi — 98% akurasi",
-                  style: TextStyle(
+                  "Visualisasi $namaMenu berhasil di-generate",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -894,10 +979,10 @@ class _AiScanViewState extends State<AiScanView> {
                   _hasScanned = false;
                 }),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white24),
                   ),
@@ -920,20 +1005,18 @@ class _AiScanViewState extends State<AiScanView> {
           top: 16,
           right: 16,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.8),
+              color: AppColors.primary.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.auto_awesome,
-                    color: Colors.white, size: 12),
+                Icon(Icons.auto_awesome, color: Colors.white, size: 12),
                 SizedBox(width: 4),
                 Text(
-                  "AI Scan",
+                  "AI Generated",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 11,
@@ -945,39 +1028,6 @@ class _AiScanViewState extends State<AiScanView> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _uploadOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: AppColors.secondary, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

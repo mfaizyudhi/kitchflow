@@ -54,7 +54,7 @@ class BottomNavbar extends StatelessWidget {
           ),
 
           buildItem(
-            icon: Icons.auto_awesome,
+            icon: Icons.calculate_rounded,
             index: 2,
           ),
 

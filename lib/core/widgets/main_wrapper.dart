@@ -6,6 +6,7 @@ import '../../app/modules/inventory/views/inventory_view.dart';
 import '../../app/modules/ai_scan/views/ai_scan_view.dart';
 import '../../app/modules/analytics/views/analytics_view.dart';
 import '../../app/modules/profil/views/profil_view.dart';
+import '../../app/modules/hpp/views/hpp_view.dart';
 import 'bottom_navbar.dart';
 
 class MainWrapper extends StatefulWidget {
@@ -21,7 +22,7 @@ class _MainWrapperState extends State<MainWrapper> {
   final List<Widget> _pages = const [
     DashboardView(),
     InventoryView(),
-    AiScanView(),
+    HppView(showBackButton: false), 
     AnalyticsView(),
     ProfilView(),
   ];
